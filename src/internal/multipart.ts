@@ -78,7 +78,7 @@ export function make({
   maxFieldSize = 1024 * 1024,
 }: {
   readonly boundary: string
-  readonly onField: (info: PartInfo, value: string) => void
+  readonly onField: (info: PartInfo, value: Uint8Array) => void
   readonly onPart: (info: PartInfo) => (chunk: Uint8Array | null) => void
   readonly onError: (error: MultipartError) => void
   readonly onDone: () => void
@@ -98,9 +98,8 @@ export function make({
     partSize: 0,
     totalSize: 0,
     isFile: false,
-    fieldValue: "",
+    fieldChunks: [] as Array<Uint8Array>,
     fieldSize: 0,
-    fieldDecoder: getDecoder("utf-8"),
   }
 
   function skipBody() {
@@ -112,19 +111,31 @@ export function make({
   const headerParser = HP.make()
 
   const split = Search.make(`\r\n--${boundary}`, function (index, chunk) {
-    if (state.parts > maxParts) {
-      onError(errMaxParts)
-    }
-
     if (index !== state.index) {
+      state.parts++
+      if (state.parts > maxParts) {
+        onError(errMaxParts)
+      }
+
       if (state.index > 0) {
         if (state.isFile) {
           state.onChunk(null)
           state.partSize = 0
         } else {
-          onField(state.info, state.fieldValue)
+          if (state.fieldChunks.length === 1) {
+            onField(state.info, state.fieldChunks[0])
+          } else {
+            const buf = new Uint8Array(state.fieldSize)
+            let offset = 0
+            for (let i = 0; i < state.fieldChunks.length; i++) {
+              const chunk = state.fieldChunks[i]
+              buf.set(chunk, offset)
+              offset += chunk.length
+            }
+            onField(state.info, buf)
+          }
           state.fieldSize = 0
-          state.fieldValue = ""
+          state.fieldChunks = []
         }
       }
 
@@ -178,24 +189,18 @@ export function make({
         },
       }
 
-      state.parts++
+      state.state = State.body
       state.isFile = isFile(state.info)
+
       if (state.isFile) {
         state.onChunk = onPart(state.info)
-      } else {
-        state.fieldDecoder = getDecoder(
-          contentType.parameters.charset ?? "utf-8",
-        )
       }
-      state.state = State.body
 
       if (result.endPosition < chunk.length) {
         if (state.isFile) {
           state.onChunk(chunk.subarray(result.endPosition))
         } else {
-          state.fieldValue += state.fieldDecoder.decode(
-            chunk.subarray(result.endPosition),
-          )
+          state.fieldChunks.push(chunk.subarray(result.endPosition))
         }
       }
     } else if (state.isFile) {
@@ -204,8 +209,7 @@ export function make({
       if ((state.fieldSize += chunk.length) > maxFieldSize) {
         onError(errMaxFieldSize)
       }
-
-      state.fieldValue += state.fieldDecoder.decode(chunk)
+      state.fieldChunks.push(chunk)
     }
   })
 
@@ -232,7 +236,7 @@ export function make({
       state.info = undefined as any as PartInfo
       state.totalSize = 0
       state.partSize = 0
-      state.fieldValue = ""
+      state.fieldChunks = []
       state.fieldSize = 0
 
       split.write(constCR)
@@ -251,4 +255,10 @@ function getDecoder(charset: string) {
   } catch (error) {
     return utf8Decoder
   }
+}
+
+export function decodeField(info: PartInfo, value: Uint8Array): string {
+  return getDecoder(info.contentType.parameters.charset ?? "utf-8").decode(
+    value,
+  )
 }
