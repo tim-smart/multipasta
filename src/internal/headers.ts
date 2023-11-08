@@ -10,24 +10,28 @@ const enum State {
 export type FailureReason =
   | "TooManyHeaders"
   | "HeaderTooLarge"
-  | "InvalidHeader"
+  | "InvalidHeaderName"
+  | "InvalidHeaderValue"
 
-export type ReturnValue =
-  | {
-      readonly _tag: "Continue"
-    }
-  | {
-      readonly _tag: "Failure"
-      readonly reason: FailureReason
-      readonly headers: ReadonlyArray<readonly [name: string, value: string]>
-    }
-  | {
-      readonly _tag: "Headers"
-      readonly headers: ReadonlyArray<readonly [name: string, value: string]>
-      readonly endPosition: number
-    }
+export interface Continue {
+  readonly _tag: "Continue"
+}
 
-const constContinue: ReturnValue = { _tag: "Continue" }
+export interface Failure {
+  readonly _tag: "Failure"
+  readonly reason: FailureReason
+  readonly headers: Record<string, string>
+}
+
+export interface Headers {
+  readonly _tag: "Headers"
+  readonly headers: Record<string, string>
+  readonly endPosition: number
+}
+
+export type ReturnValue = Continue | Failure | Headers
+
+const constContinue: Continue = { _tag: "Continue" }
 
 const constNameChars = [
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -55,7 +59,7 @@ export function make() {
   const decoder = new TextDecoder()
   const state = {
     state: State.key,
-    headers: [] as Array<readonly [name: string, value: string]>,
+    headers: Object.create(null) as Record<string, string>,
     key: "",
     value: "",
     crlf: 0,
@@ -65,7 +69,7 @@ export function make() {
 
   function reset(value: ReturnValue): ReturnValue {
     state.state = State.key
-    state.headers = []
+    state.headers = Object.create(null)
     state.key = ""
     state.value = ""
     state.crlf = 0
@@ -78,11 +82,9 @@ export function make() {
     return reset({ _tag: "Failure", reason, headers: state.headers })
   }
 
-  return function write(
-    chunk: Uint8Array,
-    start = 0,
-    end = chunk.length,
-  ): ReturnValue {
+  return function write(chunk: Uint8Array, start: number): ReturnValue {
+    const end = chunk.length
+
     outer: while (start < end) {
       if (state.state === State.key) {
         let i = start
@@ -92,7 +94,7 @@ export function make() {
           }
 
           if (constNameChars[chunk[i]] !== 1) {
-            return error("InvalidHeader")
+            return error("InvalidHeaderName")
           } else if (chunk[i] === 58) {
             state.key += decoder.decode(chunk.slice(start, i)).toLowerCase()
 
@@ -145,7 +147,7 @@ export function make() {
           }
 
           if (constValueChars[chunk[i]] !== 1) {
-            return error("InvalidHeader")
+            return error("InvalidHeaderValue")
           } else if (chunk[i] === 13 || state.crlf > 0) {
             let byte = chunk[i]
 
@@ -175,7 +177,7 @@ export function make() {
 
             if (state.crlf >= 2) {
               state.value += decoder.decode(chunk.slice(start, i - state.crlf))
-              state.headers.push([state.key, state.value])
+              state.headers[state.key] = state.value
 
               start = i
               state.size--
@@ -183,7 +185,7 @@ export function make() {
               if (state.crlf !== 4 && state.pairs === constMaxPairs) {
                 return error("TooManyHeaders")
               } else if (state.crlf === 3) {
-                return error("InvalidHeader")
+                return error("InvalidHeaderValue")
               } else if (state.crlf === 4) {
                 return reset({
                   _tag: "Headers",

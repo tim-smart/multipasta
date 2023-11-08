@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "outDir": "dist",
     "moduleDetection": "force",
     "composite": true,
     "downlevelIteration": true,
@@ -39,7 +40,6 @@
       "@effect/multipart/*": ["./src/*.ts"],
       "@effect/multipart": ["./src/index.ts"]
     },
-    "types": ["vitest/globals", "node"],
     "plugins": [{ "name": "@effect/language-service" }]
   },
   "include": ["src", "test", "examples"]

@@ -25,7 +25,7 @@ function makeState(needle_: string): SearchState {
     indexes[b].push(i)
   }
 
-  const needleFirstVariationIndex = needle.find(b => b !== needle[0]) ?? 1
+  const needleFirstVariationIndex = needle.findIndex(b => b !== needle[0]) ?? 1
   const needleFirstVariation = needle[needleFirstVariationIndex]
 
   const exactMatch = new Function(
