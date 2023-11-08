@@ -1,5 +1,5 @@
-const MAX_PAIRS = 100
-const MAX_SIZE = 16 * 1024
+const constMaxPairs = 100
+const constMaxSize = 16 * 1024
 
 const enum State {
   key,
@@ -87,7 +87,7 @@ export function make() {
       if (state.state === State.key) {
         let i = start
         for (; i < end; i++) {
-          if (state.size++ > MAX_SIZE) {
+          if (state.size++ > constMaxSize) {
             return error("HeaderTooLarge")
           }
 
@@ -123,7 +123,7 @@ export function make() {
 
       if (state.state === State.whitespace) {
         for (; start < end; start++) {
-          if (state.size++ > MAX_SIZE) {
+          if (state.size++ > constMaxSize) {
             return error("HeaderTooLarge")
           }
 
@@ -140,7 +140,7 @@ export function make() {
       if (state.state === State.value) {
         let i = start
         for (; i < end; i++) {
-          if (state.size++ > MAX_SIZE) {
+          if (state.size++ > constMaxSize) {
             return error("HeaderTooLarge")
           }
 
@@ -178,8 +178,9 @@ export function make() {
               state.headers.push([state.key, state.value])
 
               start = i
+              state.size--
 
-              if (state.crlf !== 4 && state.pairs === MAX_PAIRS) {
+              if (state.crlf !== 4 && state.pairs === constMaxPairs) {
                 return error("TooManyHeaders")
               } else if (state.crlf === 3) {
                 return error("InvalidHeader")
