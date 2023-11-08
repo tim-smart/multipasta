@@ -5,18 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 devDependencies:
-  '@types/node':
-    specifier: ^20.8.7
-    version: 20.8.7
-  '@types/streamsearch':
-    specifier: ^1.1.1
-    version: 1.1.1
   prettier:
     specifier: ^3.0.3
     version: 3.0.3
-  streamsearch:
-    specifier: ^1.1.0
-    version: 1.1.0
   ts-node:
     specifier: ^10.9.1
     version: 10.9.1(@types/node@20.8.7)(typescript@5.2.2)
@@ -71,12 +62,6 @@ packages:
       undici-types: 5.25.3
     dev: true
 
-  /@types/streamsearch@1.1.1:
-    resolution: {integrity: sha512-B7ln9rIryy/X3qVYgs21yhFVizNb5rt8nhReWLzNJbQEul3VAeIcFEHHvFE5zd2A9crQqoK0rVk6JP1+TsQqyw==}
-    dependencies:
-      '@types/node': 20.8.7
-    dev: true
-
   /acorn-walk@8.2.0:
     resolution: {integrity: sha512-k+iyHEuPgSw6SbuDpGQM+06HQUa04DZ3o+F6CSzXMvvI5KMvnaEqXe+YVe555R9nn6GPt404fos4wcgpw12SDA==}
     engines: {node: '>=0.4.0'}
@@ -109,11 +94,6 @@ packages:
     resolution: {integrity: sha512-L/4pUDMxcNa8R/EthV08Zt42WBO4h1rarVtK0K+QJG0X187OLo7l699jWw0GKuwzkPQ//jMFA/8Xm6Fh3J/DAg==}
     engines: {node: '>=14'}
     hasBin: true
-    dev: true
-
-  /streamsearch@1.1.0:
-    resolution: {integrity: sha512-Mcc5wHehp9aXz1ax6bZUyY5afg9u2rv5cqQI3mRrYkGC8rW2hM02jWuwjtL++LS5qinSyhj2QfLyNsuc+VsExg==}
-    engines: {node: '>=10.0.0'}
     dev: true
 
   /ts-node@10.9.1(@types/node@20.8.7)(typescript@5.2.2):
