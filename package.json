@@ -1,5 +1,5 @@
 {
-  "name": "multipart",
+  "name": "@effect/multipart",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,8 +10,11 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@effect/language-service": "^0.0.21",
+    "@vitest/runner": "^0.34.6",
     "prettier": "^3.0.3",
     "ts-node": "^10.9.1",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitest": "^0.34.6"
   }
 }

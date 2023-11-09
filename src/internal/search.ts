@@ -129,7 +129,7 @@ export function make(needle: string, callback: Callback) {
               emitMatch(state, chunk, newStartPosition, callback)
               chunk = chunk.subarray(newStartPosition + state.needleLength)
               chunkLength = chunk.length
-              i = 0
+              i = -1
               continue outer
             }
           }
@@ -142,7 +142,7 @@ export function make(needle: string, callback: Callback) {
           emitMatch(state, chunk, startPosition, callback)
           chunk = chunk.subarray(startPosition + state.needleLength)
           chunkLength = chunkLength - startPosition - state.needleLength
-          i = 0
+          i = -1
           continue outer
         }
       }

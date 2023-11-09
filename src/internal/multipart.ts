@@ -46,10 +46,8 @@ const errMaxFieldSize: MultipartError = {
 export interface PartInfo {
   readonly name: string
   readonly filename?: string
-  readonly contentType: {
-    readonly value: string
-    readonly parameters: Record<string, string>
-  }
+  readonly contentType: string
+  readonly contentTypeParameters: Record<string, string>
   readonly contentDiposition: Record<string, string>
   readonly headers: Record<string, string>
 }
@@ -59,11 +57,24 @@ const constCR = new TextEncoder().encode("\r\n")
 export function defaultIsFile(info: PartInfo) {
   return (
     info.contentDiposition.filename !== undefined ||
-    info.contentType.value === "application/octet-stream"
+    info.contentType === "application/octet-stream"
   )
 }
 
 function noopOnChunk(_chunk: Uint8Array | null) {}
+
+export type Config = {
+  readonly boundary: string
+  readonly onField: (info: PartInfo, value: Uint8Array) => void
+  readonly onPart: (info: PartInfo) => (chunk: Uint8Array | null) => void
+  readonly onError: (error: MultipartError) => void
+  readonly onDone: () => void
+  readonly isFile?: (info: PartInfo) => boolean
+  readonly maxParts?: number
+  readonly maxTotalSize?: number
+  readonly maxPartSize?: number
+  readonly maxFieldSize?: number
+}
 
 export function make({
   boundary,
@@ -76,18 +87,7 @@ export function make({
   maxTotalSize = Infinity,
   maxPartSize = Infinity,
   maxFieldSize = 1024 * 1024,
-}: {
-  readonly boundary: string
-  readonly onField: (info: PartInfo, value: Uint8Array) => void
-  readonly onPart: (info: PartInfo) => (chunk: Uint8Array | null) => void
-  readonly onError: (error: MultipartError) => void
-  readonly onDone: () => void
-  readonly isFile?: (info: PartInfo) => boolean
-  readonly maxParts?: number
-  readonly maxTotalSize?: number
-  readonly maxPartSize?: number
-  readonly maxFieldSize?: number
-}) {
+}: Config) {
   const state = {
     state: State.headers,
     index: 0,
@@ -111,12 +111,11 @@ export function make({
   const headerParser = HP.make()
 
   const split = Search.make(`\r\n--${boundary}`, function (index, chunk) {
-    if (index !== state.index) {
-      state.parts++
-      if (state.parts > maxParts) {
-        onError(errMaxParts)
-      }
-
+    if (index === 0) {
+      // data before the first boundary
+      skipBody()
+      return
+    } else if (index !== state.index) {
       if (state.index > 0) {
         if (state.isFile) {
           state.onChunk(null)
@@ -146,6 +145,11 @@ export function make({
       // trailing --
       if (chunk[0] === 45 && chunk[1] === 45) {
         return onDone()
+      }
+
+      state.parts++
+      if (state.parts > maxParts) {
+        onError(errMaxParts)
       }
     }
 
@@ -178,10 +182,24 @@ export function make({
         return onError(errInvalidDisposition)
       }
 
+      let encodedFilename: string | undefined
+      if ("filename*" in contentDisposition.parameters) {
+        const parts = contentDisposition.parameters["filename*"].split("''")
+        if (parts.length === 2) {
+          encodedFilename = decodeURIComponent(parts[1])
+        }
+      }
+
       state.info = {
         name: contentDisposition.parameters.name,
-        filename: contentDisposition.parameters.filename,
-        contentType,
+        filename: encodedFilename ?? contentDisposition.parameters.filename,
+        contentType:
+          contentType.value === ""
+            ? contentDisposition.parameters.filename !== undefined
+              ? "application/octet-stream"
+              : "text/plain"
+            : contentType.value,
+        contentTypeParameters: contentType.parameters,
         contentDiposition: contentDisposition.parameters as any,
         headers: result.headers,
       }
@@ -255,7 +273,5 @@ function getDecoder(charset: string) {
 }
 
 export function decodeField(info: PartInfo, value: Uint8Array): string {
-  return getDecoder(info.contentType.parameters.charset ?? "utf-8").decode(
-    value,
-  )
+  return getDecoder(info.contentTypeParameters.charset ?? "utf-8").decode(value)
 }

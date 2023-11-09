@@ -87,7 +87,9 @@ export function parse(
       // remove quotes and escapes
       value = value.slice(1, value.length - 1)
 
-      quotedPairRE.test(value) && (value = value.replace(quotedPairRE, "$1"))
+      !withoutSlash &&
+        quotedPairRE.test(value) &&
+        (value = value.replace(quotedPairRE, "$1"))
     }
 
     result.parameters[key] = value

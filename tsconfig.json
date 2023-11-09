@@ -35,6 +35,7 @@
     "incremental": true,
     "removeComments": false,
     "baseUrl": ".",
+    "rootDir": "src",
     "paths": {
       "@effect/multipart/test/*": ["./test/*.ts"],
       "@effect/multipart/*": ["./src/*.ts"],
@@ -42,5 +43,5 @@
     },
     "plugins": [{ "name": "@effect/language-service" }]
   },
-  "include": ["src", "test", "examples"]
+  "include": ["src"]
 }

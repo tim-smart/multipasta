@@ -40,10 +40,9 @@ const constNameChars = [
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1,
 ]
-constNameChars[58] = 1
 
 const constValueChars = [
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -93,10 +92,11 @@ export function make() {
             return error("HeaderTooLarge")
           }
 
-          if (constNameChars[chunk[i]] !== 1) {
-            return error("InvalidHeaderName")
-          } else if (chunk[i] === 58) {
+          if (chunk[i] === 58) {
             state.key += decoder.decode(chunk.slice(start, i)).toLowerCase()
+            if (state.key === "") {
+              return error("InvalidHeaderName")
+            }
 
             if (
               chunk[i + 1] === 32 &&
@@ -115,6 +115,8 @@ export function make() {
             }
 
             break
+          } else if (constNameChars[chunk[i]] !== 1) {
+            return error("InvalidHeaderName")
           }
         }
         if (i === end) {
@@ -146,9 +148,7 @@ export function make() {
             return error("HeaderTooLarge")
           }
 
-          if (constValueChars[chunk[i]] !== 1) {
-            return error("InvalidHeaderValue")
-          } else if (chunk[i] === 13 || state.crlf > 0) {
+          if (chunk[i] === 13 || state.crlf > 0) {
             let byte = chunk[i]
 
             if (byte === 13 && state.crlf === 0) {
@@ -202,6 +202,8 @@ export function make() {
 
               continue outer
             }
+          } else if (constValueChars[chunk[i]] !== 1) {
+            return error("InvalidHeaderValue")
           }
         }
 
