@@ -65,6 +65,8 @@ export function defaultIsFile(info: PartInfo) {
   )
 }
 
+function noopOnChunk(_chunk: Uint8Array | null) {}
+
 export function make({
   boundary,
   onPart,
@@ -92,7 +94,7 @@ export function make({
     state: State.headers,
     index: 0,
     parts: 0,
-    onChunk: (_chunk: Uint8Array | null) => {},
+    onChunk: noopOnChunk,
     info: undefined as any as PartInfo,
     headerSkip: 0,
     partSize: 0,
@@ -105,7 +107,7 @@ export function make({
   function skipBody() {
     state.state = State.body
     state.isFile = true
-    state.onChunk = () => {}
+    state.onChunk = noopOnChunk
   }
 
   const headerParser = HP.make()
@@ -181,12 +183,7 @@ export function make({
       state.info = {
         headers: result.headers,
         contentType,
-        contentDiposition: {
-          name: contentDisposition.parameters.name,
-          filename:
-            contentDisposition.parameters["filename*"] ??
-            contentDisposition.parameters.filename,
-        },
+        contentDiposition: contentDisposition.parameters as any,
       }
 
       state.state = State.body
@@ -232,7 +229,7 @@ export function make({
       state.state = State.headers
       state.index = 0
       state.parts = 0
-      state.onChunk = () => {}
+      state.onChunk = noopOnChunk
       state.info = undefined as any as PartInfo
       state.totalSize = 0
       state.partSize = 0
