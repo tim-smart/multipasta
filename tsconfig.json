@@ -36,11 +36,6 @@
     "removeComments": false,
     "baseUrl": ".",
     "rootDir": "src",
-    "paths": {
-      "@effect/multipart/test/*": ["./test/*.ts"],
-      "@effect/multipart/*": ["./src/*.ts"],
-      "@effect/multipart": ["./src/index.ts"]
-    },
     "plugins": [{ "name": "@effect/language-service" }]
   },
   "include": ["src"]
