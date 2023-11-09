@@ -520,7 +520,9 @@ describe("multipart", () => {
 
     const parser = Multipart.make({
       ...(opts.config || {}),
-      boundary: opts.boundary,
+      headers: {
+        "content-type": "multipart/form-data; boundary=" + opts.boundary,
+      },
       onFile: info => {
         let size = 0
         return chunk => {
@@ -569,7 +571,9 @@ describe("reader api", () => {
   test.each(cases)("$name", opts => {
     const parser = Multipart.makeReader({
       ...(opts.config || {}),
-      boundary: opts.boundary,
+      headers: {
+        "content-type": "multipart/form-data; boundary=" + opts.boundary,
+      },
     })
 
     const parts: Array<Multipart.Part> = []

@@ -13,6 +13,9 @@ export interface PartInfo {
 
 export type MultipartError =
   | {
+      readonly _tag: "InvalidBoundary"
+    }
+  | {
       readonly _tag: "BadHeaders"
       readonly error: HeadersParser.Failure
     }
@@ -32,7 +35,7 @@ export type MultipartError =
     }
 
 export type Config = {
-  readonly boundary: string
+  readonly headers: Record<string, string>
   readonly onField: (info: PartInfo, value: Uint8Array) => void
   readonly onFile: (info: PartInfo) => (chunk: Uint8Array | null) => void
   readonly onError: (error: MultipartError) => void
@@ -57,7 +60,7 @@ export const decodeField: (info: PartInfo, value: Uint8Array) => string =
 // reader model
 
 export type ReaderConfig = {
-  readonly boundary: string
+  readonly headers: Record<string, string>
   readonly isFile?: (info: PartInfo) => boolean
   readonly maxParts?: number
   readonly maxTotalSize?: number

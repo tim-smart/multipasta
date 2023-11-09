@@ -43,10 +43,15 @@ export function defaultIsFile(info: PartInfo) {
   )
 }
 
+function parseBoundary(headers: Record<string, string>) {
+  const contentType = CT.parse(headers["content-type"])
+  return contentType.parameters.boundary
+}
+
 function noopOnChunk(_chunk: Uint8Array | null) {}
 
 export function make({
-  boundary,
+  headers,
   onFile: onPart,
   onField,
   onError,
@@ -57,6 +62,15 @@ export function make({
   maxPartSize = Infinity,
   maxFieldSize = 1024 * 1024,
 }: Config) {
+  const boundary = parseBoundary(headers)
+  if (boundary === undefined) {
+    onError({ _tag: "InvalidBoundary" })
+    return {
+      write: noopOnChunk,
+      end() {},
+    }
+  }
+
   const state = {
     state: State.headers,
     index: 0,
