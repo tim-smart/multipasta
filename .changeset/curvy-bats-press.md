@@ -1,5 +1,0 @@
----
-"multipasta": minor
----
-
-initial version
