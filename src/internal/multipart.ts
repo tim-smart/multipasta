@@ -44,16 +44,14 @@ const errMaxFieldSize: MultipartError = {
 }
 
 export interface PartInfo {
-  readonly headers: Record<string, string>
+  readonly name: string
+  readonly filename?: string
   readonly contentType: {
     readonly value: string
     readonly parameters: Record<string, string>
   }
-  readonly contentDiposition: {
-    readonly [key: string]: string | undefined
-    readonly name: string
-    readonly filename?: string
-  }
+  readonly contentDiposition: Record<string, string>
+  readonly headers: Record<string, string>
 }
 
 const constCR = new TextEncoder().encode("\r\n")
@@ -181,9 +179,11 @@ export function make({
       }
 
       state.info = {
-        headers: result.headers,
+        name: contentDisposition.parameters.name,
+        filename: contentDisposition.parameters.filename,
         contentType,
         contentDiposition: contentDisposition.parameters as any,
+        headers: result.headers,
       }
 
       state.state = State.body
