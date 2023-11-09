@@ -26,8 +26,7 @@
     "clean": "rimraf build dist coverage .tsbuildinfo",
     "test": "vitest",
     "check": "tsc -b tsconfig.json",
-    "update-version": "changeset version && pnpm install --no-frozen-lockfile",
-    "docgen": "docgen"
+    "update-version": "changeset version && pnpm install --no-frozen-lockfile"
   },
   "devDependencies": {
     "@babel/cli": "^7.23.0",
@@ -38,13 +37,11 @@
     "@changesets/cli": "^2.26.2",
     "@effect/build-utils": "^0.3.1",
     "@effect/language-service": "^0.0.21",
-    "@size-limit/preset-small-lib": "^10.0.2",
     "@vitest/browser": "^0.34.6",
     "babel-plugin-annotate-pure-calls": "^0.4.0",
     "playwright": "^1.39.0",
     "prettier": "^3.0.3",
     "rimraf": "^5.0.5",
-    "size-limit": "^10.0.2",
     "tsx": "^3.14.0",
     "typescript": "^5.2.2",
     "vitest": "^0.34.6"
