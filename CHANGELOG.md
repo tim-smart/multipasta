@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.1.1
+
+### Patch Changes
+
+- [`3d815fb`](https://github.com/tim-smart/multipasta/commit/3d815fbbd5930b4909b9611d24622fbbcb56528e) Thanks [@tim-smart](https://github.com/tim-smart)! - use headers in config
+
 ## 0.1.0
 
 ### Minor Changes
