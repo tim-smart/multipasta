@@ -26,7 +26,7 @@
     "clean": "rimraf build dist coverage .tsbuildinfo",
     "test": "vitest",
     "check": "tsc -b tsconfig.json",
-    "update-version": "changeset version && pnpm install --no-frozen-lockfile && node scripts/version.mjs",
+    "update-version": "changeset version && pnpm install --no-frozen-lockfile",
     "docgen": "docgen"
   },
   "devDependencies": {
