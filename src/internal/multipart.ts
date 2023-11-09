@@ -1,6 +1,6 @@
-import * as Search from "./search"
-import * as HP from "./headers"
-import * as CT from "./contentType"
+import * as Search from "./search.js"
+import * as HP from "./headers.js"
+import * as CT from "./contentType.js"
 
 const enum State {
   headers,

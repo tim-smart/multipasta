@@ -1,5 +1,5 @@
 import { assert, describe, test } from "vitest"
-import * as Multipart from "../src/internal/multipart"
+import * as Multipart from "../src/internal/multipart.js"
 
 interface MultipartCase {
   readonly config?: Partial<Multipart.Config>

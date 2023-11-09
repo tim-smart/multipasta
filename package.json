@@ -1,26 +1,51 @@
 {
-  "name": "multipart",
-  "version": "1.0.0",
+  "name": "multipasta",
+  "version": "0.0.0",
   "description": "",
-  "files": [
-    "dist",
-    "src"
-  ],
-  "exports": {
-    "./package.json": "./package.json",
-    ".": "./dist/index.js"
+  "type": "module",
+  "packageManager": "pnpm@8.10.0",
+  "publishConfig": {
+    "access": "public",
+    "directory": "dist"
   },
-  "scripts": {
-    "test": "pnpm vitest"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tim-smart/multipasta.git"
+  },
+  "effect": {
+    "generateIndex": false
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Tim Smart <hello@timsmart.co>",
+  "license": "MIT",
+  "scripts": {
+    "build": "pnpm build-esm && pnpm build-cjs && pnpm build-annotate && build-utils pack-v2",
+    "build-esm": "tsc -b tsconfig.build.json",
+    "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
+    "build-annotate": "babel build --plugins annotate-pure-calls --out-dir build --source-maps",
+    "clean": "rimraf build dist coverage .tsbuildinfo",
+    "test": "vitest",
+    "check": "tsc -b tsconfig.json",
+    "update-version": "changeset version && pnpm install --no-frozen-lockfile && node scripts/version.mjs",
+    "docgen": "docgen"
+  },
   "devDependencies": {
+    "@babel/cli": "^7.23.0",
+    "@babel/core": "^7.23.0",
+    "@babel/plugin-transform-export-namespace-from": "^7.22.11",
+    "@babel/plugin-transform-modules-commonjs": "^7.23.0",
+    "@changesets/changelog-github": "^0.4.8",
+    "@changesets/cli": "^2.26.2",
+    "@effect/build-utils": "^0.3.1",
     "@effect/language-service": "^0.0.21",
-    "@vitest/runner": "^0.34.6",
+    "@size-limit/preset-small-lib": "^10.0.2",
+    "@vitest/browser": "^0.34.6",
+    "babel-plugin-annotate-pure-calls": "^0.4.0",
+    "playwright": "^1.39.0",
     "prettier": "^3.0.3",
-    "ts-node": "^10.9.1",
+    "rimraf": "^5.0.5",
+    "size-limit": "^10.0.2",
+    "tsx": "^3.14.0",
     "typescript": "^5.2.2",
     "vitest": "^0.34.6"
   }

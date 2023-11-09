@@ -1,3 +1,6 @@
 node_modules/
 dist/
 tsconfig.tsbuildinfo
+build/
+.tsbuildinfo/
+.direnv/
