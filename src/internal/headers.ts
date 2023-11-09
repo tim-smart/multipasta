@@ -1,3 +1,5 @@
+import { Continue, FailureReason, ReturnValue } from "../HeadersParser.js"
+
 const constMaxPairs = 100
 const constMaxSize = 16 * 1024
 
@@ -6,30 +8,6 @@ const enum State {
   whitespace,
   value,
 }
-
-export type FailureReason =
-  | "TooManyHeaders"
-  | "HeaderTooLarge"
-  | "InvalidHeaderName"
-  | "InvalidHeaderValue"
-
-export interface Continue {
-  readonly _tag: "Continue"
-}
-
-export interface Failure {
-  readonly _tag: "Failure"
-  readonly reason: FailureReason
-  readonly headers: Record<string, string>
-}
-
-export interface Headers {
-  readonly _tag: "Headers"
-  readonly headers: Record<string, string>
-  readonly endPosition: number
-}
-
-export type ReturnValue = Continue | Failure | Headers
 
 const constContinue: Continue = { _tag: "Continue" }
 

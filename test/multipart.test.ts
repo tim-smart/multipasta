@@ -1,5 +1,5 @@
 import { assert, describe, test } from "vitest"
-import * as Multipart from "../src/internal/multipart.js"
+import * as Multipart from "../src/index.js"
 
 interface MultipartCase {
   readonly config?: Partial<Multipart.Config>
@@ -252,7 +252,10 @@ const cases: ReadonlyArray<MultipartCase> = [
       ].join("\r\n"),
     ],
     boundary: "----WebKitFormBoundaryTB2MiQ36fnSJlrhY",
-    expected: [["field", "cont", "some random content", "text/plain"]],
+    expected: [
+      ["field", "cont", "some random content", "text/plain"],
+      ["field", "", "some random pass", "text/plain"],
+    ],
     name: "Empty content-type and empty content-disposition",
   },
   {
@@ -518,7 +521,7 @@ describe("multipart", () => {
     const parser = Multipart.make({
       ...(opts.config || {}),
       boundary: opts.boundary,
-      onPart: info => {
+      onFile: info => {
         let size = 0
         return chunk => {
           if (chunk) {
@@ -555,6 +558,34 @@ describe("multipart", () => {
         assert.strictEqual(expected[3], part[1].filename)
       }
     })
+
+    if (opts.errors) {
+      assert.deepEqual(opts.errors, errors)
+    }
+  })
+})
+
+describe("reader api", () => {
+  test.each(cases)("$name", opts => {
+    const parser = Multipart.makeReader({
+      ...(opts.config || {}),
+      boundary: opts.boundary,
+    })
+
+    const parts: Array<Multipart.Part> = []
+    const errors: Array<Multipart.MultipartError["_tag"]> = []
+
+    ;[...opts.source.map(_ => new TextEncoder().encode(_)), null].forEach(
+      chunk => {
+        const [err, result] = parser(chunk)
+        parts.push(...result)
+        if (err) {
+          errors.push(...err.errors.map(_ => _._tag))
+        }
+      },
+    )
+
+    assert.strictEqual(opts.expected.length, parts.length)
 
     if (opts.errors) {
       assert.deepEqual(opts.errors, errors)

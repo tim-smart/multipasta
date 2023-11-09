@@ -1,31 +1,22 @@
 import * as Search from "./search.js"
 import * as HP from "./headers.js"
 import * as CT from "./contentType.js"
+import {
+  Config,
+  MultipartError,
+  Part,
+  PartInfo,
+  ReaderConfig,
+  File,
+  Field,
+  ReadResult,
+  MultipartReadError,
+} from "../index.js"
 
 const enum State {
   headers,
   body,
 }
-
-export type MultipartError =
-  | {
-      readonly _tag: "BadHeaders"
-      readonly error: HP.Failure
-    }
-  | {
-      readonly _tag: "InvalidDisposition"
-    }
-  | {
-      readonly _tag: "ReachedLimit"
-      readonly limit:
-        | "MaxParts"
-        | "MaxTotalSize"
-        | "MaxPartSize"
-        | "MaxFieldSize"
-    }
-  | {
-      readonly _tag: "EndNotReached"
-    }
 
 const errInvalidDisposition: MultipartError = { _tag: "InvalidDisposition" }
 const errEndNotReached: MultipartError = { _tag: "EndNotReached" }
@@ -43,42 +34,20 @@ const errMaxFieldSize: MultipartError = {
   limit: "MaxFieldSize",
 }
 
-export interface PartInfo {
-  readonly name: string
-  readonly filename?: string
-  readonly contentType: string
-  readonly contentTypeParameters: Record<string, string>
-  readonly contentDiposition: Record<string, string>
-  readonly headers: Record<string, string>
-}
-
 const constCR = new TextEncoder().encode("\r\n")
 
 export function defaultIsFile(info: PartInfo) {
   return (
-    info.contentDiposition.filename !== undefined ||
+    info.filename !== undefined ||
     info.contentType === "application/octet-stream"
   )
 }
 
 function noopOnChunk(_chunk: Uint8Array | null) {}
 
-export type Config = {
-  readonly boundary: string
-  readonly onField: (info: PartInfo, value: Uint8Array) => void
-  readonly onPart: (info: PartInfo) => (chunk: Uint8Array | null) => void
-  readonly onError: (error: MultipartError) => void
-  readonly onDone: () => void
-  readonly isFile?: (info: PartInfo) => boolean
-  readonly maxParts?: number
-  readonly maxTotalSize?: number
-  readonly maxPartSize?: number
-  readonly maxFieldSize?: number
-}
-
 export function make({
   boundary,
-  onPart,
+  onFile: onPart,
   onField,
   onError,
   onDone,
@@ -175,7 +144,7 @@ export function make({
       )
 
       if (
-        "form-data" !== contentDisposition.value ||
+        "form-data" === contentDisposition.value &&
         !("name" in contentDisposition.parameters)
       ) {
         skipBody()
@@ -191,7 +160,7 @@ export function make({
       }
 
       state.info = {
-        name: contentDisposition.parameters.name,
+        name: contentDisposition.parameters.name ?? "",
         filename: encodedFilename ?? contentDisposition.parameters.filename,
         contentType:
           contentType.value === ""
@@ -200,7 +169,8 @@ export function make({
               : "text/plain"
             : contentType.value,
         contentTypeParameters: contentType.parameters,
-        contentDiposition: contentDisposition.parameters as any,
+        contentDiposition: contentDisposition.value,
+        contentDipositionParameters: contentDisposition.parameters as any,
         headers: result.headers,
       }
 
@@ -259,6 +229,87 @@ export function make({
   } as const
 }
 
+class FileImpl implements File {
+  constructor(readonly info: PartInfo) {}
+  readonly _tag = "File"
+
+  buffer: Array<Uint8Array> = []
+  finished = false
+
+  read() {
+    if (this.buffer.length === 0) {
+      return this.finished ? null : this.buffer
+    }
+
+    const buf = this.buffer
+    this.buffer = []
+    return buf
+  }
+
+  ignored = false
+  ignore() {
+    this.ignored = true
+    this.buffer = []
+  }
+}
+
+const emptyReadResult: ReadResult = [null, []]
+
+export const makeReader = (config: ReaderConfig) => {
+  let partBuffer: Array<Part> = []
+  let errors: MultipartReadError | null = null
+  let hasData = false
+  let ended = false
+
+  const parser = make({
+    ...config,
+    onField(info, value) {
+      partBuffer.push({ _tag: "Field", info, value })
+      hasData = true
+    },
+    onFile(info) {
+      const file = new FileImpl(info)
+      partBuffer.push(file)
+      hasData = true
+      return function (chunk: Uint8Array | null) {
+        if (chunk === null) {
+          file.finished = true
+        } else if (!file.ignored) {
+          file.buffer.push(chunk)
+        }
+      }
+    },
+    onError(error) {
+      if (errors === null) {
+        errors = { _tag: "MultipartReadError", errors: [error] }
+        hasData = true
+      } else {
+        ;(errors.errors as any).push(error)
+      }
+    },
+    onDone() {},
+  })
+
+  return function (chunk: Uint8Array | null): ReadResult {
+    if (chunk === null) {
+      parser.end()
+      ended = true
+    } else if (!ended) {
+      parser.write(chunk)
+    }
+
+    if (hasData) {
+      const result: ReadResult = [errors, partBuffer]
+      errors = null
+      partBuffer = []
+      hasData = false
+      return result
+    }
+
+    return emptyReadResult
+  }
+}
+
 const utf8Decoder = new TextDecoder("utf-8")
 function getDecoder(charset: string) {
   if (charset === "utf-8" || charset === "utf8" || charset === "") {
@@ -274,4 +325,12 @@ function getDecoder(charset: string) {
 
 export function decodeField(info: PartInfo, value: Uint8Array): string {
   return getDecoder(info.contentTypeParameters.charset ?? "utf-8").decode(value)
+}
+
+export function isFile(part: Part): part is File {
+  return part._tag === "File"
+}
+
+export function isField(part: Part): part is Field {
+  return part._tag === "Field"
 }

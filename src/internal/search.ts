@@ -12,8 +12,6 @@ interface SearchState {
   matchIndex: number
 }
 
-type Callback = (index: number, chunk: Uint8Array) => void
-
 function makeState(needle_: string): SearchState {
   const needle = new TextEncoder().encode(needle_)
   const needleLength = needle.length
@@ -56,7 +54,7 @@ function emitMatch(
   state: SearchState,
   chunk: Uint8Array,
   startPos: number,
-  callback: Callback,
+  callback: (index: number, chunk: Uint8Array) => void,
 ) {
   if (state.previousChunk !== undefined) {
     callback(state.matchIndex, state.previousChunk)
@@ -70,7 +68,10 @@ function emitMatch(
   state.matchIndex += 1
 }
 
-export function make(needle: string, callback: Callback) {
+export function make(
+  needle: string,
+  callback: (index: number, chunk: Uint8Array) => void,
+) {
   const state = makeState(needle)
 
   function write(chunk: Uint8Array): void {
