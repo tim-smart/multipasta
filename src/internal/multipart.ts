@@ -222,12 +222,13 @@ export function make({
       return split.write(chunk)
     },
     end() {
-      split.end()
+      if (state.totalSize === 0) {
+        return
+      }
 
+      split.end()
       if (state.state === State.body) {
         onError(errEndNotReached)
-      } else if (state.totalSize === 0) {
-        return
       }
 
       state.state = State.headers
