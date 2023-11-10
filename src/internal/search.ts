@@ -71,8 +71,13 @@ function emitMatch(
 export function make(
   needle: string,
   callback: (index: number, chunk: Uint8Array) => void,
+  seed?: Uint8Array,
 ) {
   const state = makeState(needle)
+  if (seed !== undefined) {
+    state.previousChunk = seed
+    state.previousChunkLength = seed.length
+  }
 
   function write(chunk: Uint8Array): void {
     let chunkLength = chunk.length
@@ -166,8 +171,8 @@ export function make(
       callback(state.matchIndex, state.previousChunk)
     }
 
-    state.previousChunk = undefined
-    state.previousChunkLength = 0
+    state.previousChunk = seed
+    state.previousChunkLength = seed?.length ?? 0
     state.matchIndex = 0
   }
 

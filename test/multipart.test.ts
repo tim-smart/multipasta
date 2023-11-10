@@ -592,7 +592,6 @@ describe("pull api", () => {
     function loop() {
       parser(function (error, part) {
         if (error) {
-          console.log(error)
           errors = error.errors.map(_ => _._tag)
         }
         if (part !== null) {

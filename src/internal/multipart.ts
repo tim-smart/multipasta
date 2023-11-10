@@ -92,144 +92,141 @@ export function make({
 
   const headerParser = HP.make()
 
-  const split = Search.make(`\r\n--${boundary}`, function (index, chunk) {
-    if (index === 0) {
-      // data before the first boundary
-      skipBody()
-      return
-    } else if (index !== state.index) {
-      if (state.index > 0) {
-        if (state.isFile) {
-          state.onChunk(null)
-          state.partSize = 0
-        } else {
-          if (state.fieldChunks.length === 1) {
-            onField(state.info, state.fieldChunks[0])
-          } else {
-            const buf = new Uint8Array(state.fieldSize)
-            let offset = 0
-            for (let i = 0; i < state.fieldChunks.length; i++) {
-              const chunk = state.fieldChunks[i]
-              buf.set(chunk, offset)
-              offset += chunk.length
-            }
-            onField(state.info, buf)
-          }
-          state.fieldSize = 0
-          state.fieldChunks = []
-        }
-      }
-
-      state.state = State.headers
-      state.index = index
-      state.headerSkip = 2 // skip the first \r\n
-
-      // trailing --
-      if (chunk[0] === 45 && chunk[1] === 45) {
-        return onDone()
-      }
-
-      state.parts++
-      if (state.parts > maxParts) {
-        onError(errMaxParts)
-      }
-    }
-
-    if ((state.partSize += chunk.length) > maxPartSize) {
-      onError(errMaxPartSize)
-    }
-
-    if (state.state === State.headers) {
-      const result = headerParser(chunk, state.headerSkip)
-      state.headerSkip = 0
-
-      if (result._tag === "Continue") {
+  const split = Search.make(
+    `\r\n--${boundary}`,
+    function (index, chunk) {
+      if (index === 0) {
+        // data before the first boundary
+        skipBody()
         return
-      } else if (result._tag === "Failure") {
-        skipBody()
-        return onError({ _tag: "BadHeaders", error: result })
-      }
-
-      const contentType = CT.parse(result.headers["content-type"])
-      const contentDisposition = CT.parse(
-        result.headers["content-disposition"],
-        true,
-      )
-
-      if (
-        "form-data" === contentDisposition.value &&
-        !("name" in contentDisposition.parameters)
-      ) {
-        skipBody()
-        return onError(errInvalidDisposition)
-      }
-
-      let encodedFilename: string | undefined
-      if ("filename*" in contentDisposition.parameters) {
-        const parts = contentDisposition.parameters["filename*"].split("''")
-        if (parts.length === 2) {
-          encodedFilename = decodeURIComponent(parts[1])
-        }
-      }
-
-      state.info = {
-        name: contentDisposition.parameters.name ?? "",
-        filename: encodedFilename ?? contentDisposition.parameters.filename,
-        contentType:
-          contentType.value === ""
-            ? contentDisposition.parameters.filename !== undefined
-              ? "application/octet-stream"
-              : "text/plain"
-            : contentType.value,
-        contentTypeParameters: contentType.parameters,
-        contentDiposition: contentDisposition.value,
-        contentDipositionParameters: contentDisposition.parameters as any,
-        headers: result.headers,
-      }
-
-      state.state = State.body
-      state.isFile = isFile(state.info)
-
-      if (state.isFile) {
-        state.onChunk = onPart(state.info)
-      }
-
-      if (result.endPosition < chunk.length) {
-        if (state.isFile) {
-          state.onChunk(chunk.subarray(result.endPosition))
-        } else {
-          const buf = chunk.subarray(result.endPosition)
-          if ((state.fieldSize += buf.length) > maxFieldSize) {
-            onError(errMaxFieldSize)
+      } else if (index !== state.index) {
+        if (state.index > 0) {
+          if (state.isFile) {
+            state.onChunk(null)
+            state.partSize = 0
+          } else {
+            if (state.fieldChunks.length === 1) {
+              onField(state.info, state.fieldChunks[0])
+            } else {
+              const buf = new Uint8Array(state.fieldSize)
+              let offset = 0
+              for (let i = 0; i < state.fieldChunks.length; i++) {
+                const chunk = state.fieldChunks[i]
+                buf.set(chunk, offset)
+                offset += chunk.length
+              }
+              onField(state.info, buf)
+            }
+            state.fieldSize = 0
+            state.fieldChunks = []
           }
-          state.fieldChunks.push(buf)
+        }
+
+        state.state = State.headers
+        state.index = index
+        state.headerSkip = 2 // skip the first \r\n
+
+        // trailing --
+        if (chunk[0] === 45 && chunk[1] === 45) {
+          return onDone()
+        }
+
+        state.parts++
+        if (state.parts > maxParts) {
+          onError(errMaxParts)
         }
       }
-    } else if (state.isFile) {
-      state.onChunk(chunk)
-    } else {
-      if ((state.fieldSize += chunk.length) > maxFieldSize) {
-        onError(errMaxFieldSize)
-      }
-      state.fieldChunks.push(chunk)
-    }
-  })
 
-  split.write(constCR)
+      if ((state.partSize += chunk.length) > maxPartSize) {
+        onError(errMaxPartSize)
+      }
+
+      if (state.state === State.headers) {
+        const result = headerParser(chunk, state.headerSkip)
+        state.headerSkip = 0
+
+        if (result._tag === "Continue") {
+          return
+        } else if (result._tag === "Failure") {
+          skipBody()
+          return onError({ _tag: "BadHeaders", error: result })
+        }
+
+        const contentType = CT.parse(result.headers["content-type"])
+        const contentDisposition = CT.parse(
+          result.headers["content-disposition"],
+          true,
+        )
+
+        if (
+          "form-data" === contentDisposition.value &&
+          !("name" in contentDisposition.parameters)
+        ) {
+          skipBody()
+          return onError(errInvalidDisposition)
+        }
+
+        let encodedFilename: string | undefined
+        if ("filename*" in contentDisposition.parameters) {
+          const parts = contentDisposition.parameters["filename*"].split("''")
+          if (parts.length === 2) {
+            encodedFilename = decodeURIComponent(parts[1])
+          }
+        }
+
+        state.info = {
+          name: contentDisposition.parameters.name ?? "",
+          filename: encodedFilename ?? contentDisposition.parameters.filename,
+          contentType:
+            contentType.value === ""
+              ? contentDisposition.parameters.filename !== undefined
+                ? "application/octet-stream"
+                : "text/plain"
+              : contentType.value,
+          contentTypeParameters: contentType.parameters,
+          contentDiposition: contentDisposition.value,
+          contentDipositionParameters: contentDisposition.parameters as any,
+          headers: result.headers,
+        }
+
+        state.state = State.body
+        state.isFile = isFile(state.info)
+
+        if (state.isFile) {
+          state.onChunk = onPart(state.info)
+        }
+
+        if (result.endPosition < chunk.length) {
+          if (state.isFile) {
+            state.onChunk(chunk.subarray(result.endPosition))
+          } else {
+            const buf = chunk.subarray(result.endPosition)
+            if ((state.fieldSize += buf.length) > maxFieldSize) {
+              onError(errMaxFieldSize)
+            }
+            state.fieldChunks.push(buf)
+          }
+        }
+      } else if (state.isFile) {
+        state.onChunk(chunk)
+      } else {
+        if ((state.fieldSize += chunk.length) > maxFieldSize) {
+          onError(errMaxFieldSize)
+        }
+        state.fieldChunks.push(chunk)
+      }
+    },
+    constCR,
+  )
 
   return {
     write(chunk: Uint8Array) {
       if ((state.totalSize += chunk.length) > maxTotalSize) {
         return onError(errMaxTotalSize)
       }
-
       return split.write(chunk)
     },
     end() {
-      if (state.totalSize === 0) {
-        return
-      }
-
       split.end()
       if (state.state === State.body) {
         onError(errEndNotReached)
@@ -244,8 +241,6 @@ export function make({
       state.partSize = 0
       state.fieldChunks = []
       state.fieldSize = 0
-
-      split.write(constCR)
     },
   } as const
 }
