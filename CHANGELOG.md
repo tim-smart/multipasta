@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.1.4
+
+### Patch Changes
+
+- [`05a7fcb`](https://github.com/tim-smart/multipasta/commit/05a7fcb91719fec363323e3a62f7f5502ad98f4d) Thanks [@tim-smart](https://github.com/tim-smart)! - fix for multiple ends
+
 ## 0.1.3
 
 ### Patch Changes
