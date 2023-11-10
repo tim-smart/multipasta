@@ -57,22 +57,12 @@ export const defaultIsFile: (info: PartInfo) => boolean = internal.defaultIsFile
 export const decodeField: (info: PartInfo, value: Uint8Array) => string =
   internal.decodeField
 
-// reader model
-
-export type ReaderConfig = {
-  readonly headers: Record<string, string>
-  readonly isFile?: (info: PartInfo) => boolean
-  readonly maxParts?: number
-  readonly maxTotalSize?: number
-  readonly maxPartSize?: number
-  readonly maxFieldSize?: number
-}
+// pull model
 
 export interface File {
   readonly _tag: "File"
   readonly info: PartInfo
-  readonly read: () => ReadonlyArray<Uint8Array> | null
-  readonly ignore: () => void
+  readonly read: (cb: (chunk: ReadonlyArray<Uint8Array> | null) => void) => void
 }
 
 export interface Field {
@@ -81,21 +71,28 @@ export interface Field {
   readonly value: Uint8Array
 }
 
-export type Part = File | Field
-
 export const isFile: (part: Part) => part is File = internal.isFile
 export const isField: (part: Part) => part is Field = internal.isField
 
-export interface MultipartReadError {
-  readonly _tag: "MultipartReadError"
+export type Part = File | Field
+
+export type PullConfig = {
+  readonly pull: (cb: (chunk: ReadonlyArray<Uint8Array> | null) => void) => void
+  readonly headers: Record<string, string>
+  readonly isFile?: (info: PartInfo) => boolean
+  readonly maxParts?: number
+  readonly maxTotalSize?: number
+  readonly maxPartSize?: number
+  readonly maxFieldSize?: number
+}
+
+export interface MultipartPullError {
+  readonly _tag: "MultipartPullError"
   readonly errors: ReadonlyArray<MultipartError>
 }
 
-export type ReadResult = readonly [
-  MultipartReadError | null,
-  ReadonlyArray<Part>,
-]
-
-export const makeReader: (
-  config: ReaderConfig,
-) => (chunk: Uint8Array | null) => ReadResult = internal.makeReader
+export const makePull: (
+  config: PullConfig,
+) => (
+  cb: (err: MultipartPullError | null, part: readonly Part[] | null) => void,
+) => void = internal.makePull

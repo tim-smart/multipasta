@@ -567,27 +567,41 @@ describe("multipart", () => {
   })
 })
 
-describe("reader api", () => {
+describe("pull api", () => {
   test.each(cases)("$name", opts => {
-    const parser = Multipart.makeReader({
+    const iterator = opts.source[Symbol.iterator]()
+
+    const parser = Multipart.makePull({
       ...(opts.config || {}),
       headers: {
         "content-type": "multipart/form-data; boundary=" + opts.boundary,
       },
+      pull(cb) {
+        const val = iterator.next()
+        if (val.done) {
+          cb(null)
+        } else {
+          cb([new TextEncoder().encode(val.value)])
+        }
+      },
     })
 
     const parts: Array<Multipart.Part> = []
-    const errors: Array<Multipart.MultipartError["_tag"]> = []
+    let errors: Array<Multipart.MultipartError["_tag"]> = []
 
-    ;[...opts.source.map(_ => new TextEncoder().encode(_)), null].forEach(
-      chunk => {
-        const [err, result] = parser(chunk)
-        parts.push(...result)
-        if (err) {
-          errors.push(...err.errors.map(_ => _._tag))
+    function loop() {
+      parser(function (error, part) {
+        if (error) {
+          console.log(error)
+          errors = error.errors.map(_ => _._tag)
         }
-      },
-    )
+        if (part !== null) {
+          parts.push(...part)
+          loop()
+        }
+      })
+    }
+    loop()
 
     assert.strictEqual(opts.expected.length, parts.length)
 

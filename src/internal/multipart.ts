@@ -1,17 +1,16 @@
-import * as Search from "./search.js"
-import * as HP from "./headers.js"
-import * as CT from "./contentType.js"
 import {
   Config,
+  Field,
+  File,
   MultipartError,
+  MultipartPullError,
   Part,
   PartInfo,
-  ReaderConfig,
-  File,
-  Field,
-  ReadResult,
-  MultipartReadError,
+  PullConfig,
 } from "../index.js"
+import * as CT from "./contentType.js"
+import * as HP from "./headers.js"
+import * as Search from "./search.js"
 
 const enum State {
   headers,
@@ -243,87 +242,6 @@ export function make({
   } as const
 }
 
-class FileImpl implements File {
-  constructor(readonly info: PartInfo) {}
-  readonly _tag = "File"
-
-  buffer: Array<Uint8Array> = []
-  finished = false
-
-  read() {
-    if (this.buffer.length === 0) {
-      return this.finished ? null : this.buffer
-    }
-
-    const buf = this.buffer
-    this.buffer = []
-    return buf
-  }
-
-  ignored = false
-  ignore() {
-    this.ignored = true
-    this.buffer = []
-  }
-}
-
-const emptyReadResult: ReadResult = [null, []]
-
-export const makeReader = (config: ReaderConfig) => {
-  let partBuffer: Array<Part> = []
-  let errors: MultipartReadError | null = null
-  let hasData = false
-  let ended = false
-
-  const parser = make({
-    ...config,
-    onField(info, value) {
-      partBuffer.push({ _tag: "Field", info, value })
-      hasData = true
-    },
-    onFile(info) {
-      const file = new FileImpl(info)
-      partBuffer.push(file)
-      hasData = true
-      return function (chunk: Uint8Array | null) {
-        if (chunk === null) {
-          file.finished = true
-        } else if (!file.ignored) {
-          file.buffer.push(chunk)
-        }
-      }
-    },
-    onError(error) {
-      if (errors === null) {
-        errors = { _tag: "MultipartReadError", errors: [error] }
-        hasData = true
-      } else {
-        ;(errors.errors as any).push(error)
-      }
-    },
-    onDone() {},
-  })
-
-  return function (chunk: Uint8Array | null): ReadResult {
-    if (chunk === null) {
-      parser.end()
-      ended = true
-    } else if (!ended) {
-      parser.write(chunk)
-    }
-
-    if (hasData) {
-      const result: ReadResult = [errors, partBuffer]
-      errors = null
-      partBuffer = []
-      hasData = false
-      return result
-    }
-
-    return emptyReadResult
-  }
-}
-
 const utf8Decoder = new TextDecoder("utf-8")
 function getDecoder(charset: string) {
   if (charset === "utf-8" || charset === "utf8" || charset === "") {
@@ -347,4 +265,108 @@ export function isFile(part: Part): part is File {
 
 export function isField(part: Part): part is Field {
   return part._tag === "Field"
+}
+
+class FileImpl implements File {
+  readonly _tag = "File"
+  constructor(
+    readonly info: PartInfo,
+    private pull: (cb: () => void) => void,
+  ) {}
+
+  buffer: Array<Uint8Array> = []
+  hasData = false
+  finished = false
+
+  read(cb: (chunk: ReadonlyArray<Uint8Array> | null) => void) {
+    if (this.hasData) {
+      const buf = this.buffer
+      this.buffer = []
+      this.hasData = false
+      cb(buf)
+      if (this.finished) {
+        cb(null)
+      }
+    } else if (this.finished) {
+      cb(null)
+    } else {
+      this.pull(() => this.read(cb))
+    }
+  }
+}
+
+function noop() {}
+
+export function makePull(config: PullConfig) {
+  let partBuffer: Array<Part> = []
+  let error: MultipartPullError | null = null
+  let hasData = false
+  let ended = false
+
+  const parser = make({
+    ...config,
+    onField(info, value) {
+      partBuffer.push({ _tag: "Field", info, value })
+      hasData = true
+    },
+    onFile(info) {
+      const file = new FileImpl(info, pull)
+      partBuffer.push(file)
+      hasData = true
+      return function (chunk) {
+        if (chunk === null) {
+          file.finished = true
+        } else {
+          file.buffer.push(chunk)
+          file.hasData = true
+        }
+      }
+    },
+    onError(error_) {
+      if (error === null) {
+        error = { _tag: "MultipartPullError", errors: [error_] }
+        hasData = true
+      } else {
+        ;(error.errors as any).push(error_)
+      }
+    },
+    onDone() {},
+  })
+
+  function pull(cb: () => void) {
+    config.pull(function (chunk) {
+      if (chunk === null) {
+        parser.end()
+        ended = true
+      } else if (!ended) {
+        for (let i = 0; i < chunk.length; i++) {
+          parser.write(chunk[i])
+        }
+      }
+      cb()
+    })
+  }
+
+  pull(noop)
+
+  return function loop(
+    cb: (
+      err: MultipartPullError | null,
+      part: ReadonlyArray<Part> | null,
+    ) => void,
+  ) {
+    if (hasData) {
+      const result = partBuffer
+      partBuffer = []
+      hasData = false
+      cb(error, result)
+      pull(noop)
+    } else if (ended) {
+      cb(error, null)
+    } else {
+      pull(function () {
+        loop(cb)
+      })
+    }
+  }
 }
