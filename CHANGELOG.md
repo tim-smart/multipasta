@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.1.5
+
+### Patch Changes
+
+- [`7d7c35b`](https://github.com/tim-smart/multipasta/commit/7d7c35b8f6f7cf9f45d5c26f983a9d308fbad529) Thanks [@tim-smart](https://github.com/tim-smart)! - don't emit seed
+
 ## 0.1.4
 
 ### Patch Changes
