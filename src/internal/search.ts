@@ -167,7 +167,7 @@ export function make(
   }
 
   function end(): void {
-    if (state.previousChunk !== undefined) {
+    if (state.previousChunk !== undefined && state.previousChunk !== seed) {
       callback(state.matchIndex, state.previousChunk)
     }
 
