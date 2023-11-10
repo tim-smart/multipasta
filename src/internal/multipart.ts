@@ -198,7 +198,11 @@ export function make({
         if (state.isFile) {
           state.onChunk(chunk.subarray(result.endPosition))
         } else {
-          state.fieldChunks.push(chunk.subarray(result.endPosition))
+          const buf = chunk.subarray(result.endPosition)
+          if ((state.fieldSize += buf.length) > maxFieldSize) {
+            onError(errMaxFieldSize)
+          }
+          state.fieldChunks.push(buf)
         }
       }
     } else if (state.isFile) {
