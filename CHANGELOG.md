@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.1.3
+
+### Patch Changes
+
+- [`af7b4b4`](https://github.com/tim-smart/multipasta/commit/af7b4b4e28ac4692ae33871940423a64707b3cf6) Thanks [@tim-smart](https://github.com/tim-smart)! - support emitting errors in pull api
+
 ## 0.1.2
 
 ### Patch Changes
