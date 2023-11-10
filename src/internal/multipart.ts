@@ -297,11 +297,20 @@ class FileImpl implements File {
 
 function noop() {}
 
-export function makePull(config: PullConfig) {
+export function makePull<E = never>(config: PullConfig<E>) {
   let partBuffer: Array<Part> = []
-  let error: MultipartPullError | null = null
+  let error: MultipartPullError<E> | null = null
   let hasData = false
   let ended = false
+
+  function addError(err: E | MultipartError) {
+    if (error === null) {
+      error = { _tag: "MultipartPullError", errors: [err] }
+      hasData = true
+    } else {
+      ;(error.errors as any).push(err)
+    }
+  }
 
   const parser = make({
     ...config,
@@ -322,22 +331,19 @@ export function makePull(config: PullConfig) {
         }
       }
     },
-    onError(error_) {
-      if (error === null) {
-        error = { _tag: "MultipartPullError", errors: [error_] }
-        hasData = true
-      } else {
-        ;(error.errors as any).push(error_)
-      }
-    },
+    onError: addError,
     onDone() {},
   })
 
   function pull(cb: () => void) {
-    config.pull(function (chunk) {
+    config.pull(function (err, chunk) {
       if (chunk === null) {
         parser.end()
         ended = true
+      } else if (err !== null) {
+        parser.end()
+        ended = true
+        addError(err)
       } else if (!ended) {
         for (let i = 0; i < chunk.length; i++) {
           parser.write(chunk[i])
@@ -351,7 +357,7 @@ export function makePull(config: PullConfig) {
 
   return function loop(
     cb: (
-      err: MultipartPullError | null,
+      err: MultipartPullError<E> | null,
       part: ReadonlyArray<Part> | null,
     ) => void,
   ) {

@@ -579,9 +579,9 @@ describe("pull api", () => {
       pull(cb) {
         const val = iterator.next()
         if (val.done) {
-          cb(null)
+          cb(null, null)
         } else {
-          cb([new TextEncoder().encode(val.value)])
+          cb(null, [new TextEncoder().encode(val.value)])
         }
       },
     })

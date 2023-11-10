@@ -76,8 +76,10 @@ export const isField: (part: Part) => part is Field = internal.isField
 
 export type Part = File | Field
 
-export type PullConfig = {
-  readonly pull: (cb: (chunk: ReadonlyArray<Uint8Array> | null) => void) => void
+export type PullConfig<E> = {
+  readonly pull: (
+    cb: (err: E | null, chunk: ReadonlyArray<Uint8Array> | null) => void,
+  ) => void
   readonly headers: Record<string, string>
   readonly isFile?: (info: PartInfo) => boolean
   readonly maxParts?: number
@@ -86,13 +88,13 @@ export type PullConfig = {
   readonly maxFieldSize?: number
 }
 
-export interface MultipartPullError {
+export interface MultipartPullError<E> {
   readonly _tag: "MultipartPullError"
-  readonly errors: ReadonlyArray<MultipartError>
+  readonly errors: ReadonlyArray<MultipartError | E>
 }
 
-export const makePull: (
-  config: PullConfig,
+export const makePull: <E = never>(
+  config: PullConfig<E>,
 ) => (
-  cb: (err: MultipartPullError | null, part: readonly Part[] | null) => void,
+  cb: (err: MultipartPullError<E> | null, part: readonly Part[] | null) => void,
 ) => void = internal.makePull
