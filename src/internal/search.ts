@@ -76,7 +76,6 @@ export function make(
 
   function write(chunk: Uint8Array): void {
     let chunkLength = chunk.length
-
     if (chunkLength < state.needleLength) {
       if (state.previousChunk === undefined) {
         state.previousChunk = chunk

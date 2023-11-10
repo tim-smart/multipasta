@@ -223,8 +223,11 @@ export function make({
     },
     end() {
       split.end()
+
       if (state.state === State.body) {
         onError(errEndNotReached)
+      } else if (state.totalSize === 0) {
+        return
       }
 
       state.state = State.headers
@@ -352,8 +355,6 @@ export function makePull<E = never>(config: PullConfig<E>) {
       cb()
     })
   }
-
-  pull(noop)
 
   return function loop(
     cb: (
