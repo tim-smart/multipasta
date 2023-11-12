@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.1.10
+
+### Patch Changes
+
+- [`7b0c422`](https://github.com/tim-smart/multipasta/commit/7b0c42202035260925e7e6c7333aad7e202c824d) Thanks [@tim-smart](https://github.com/tim-smart)! - add web api
+
 ## 0.1.9
 
 ### Patch Changes
