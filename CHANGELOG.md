@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.1.7
+
+### Patch Changes
+
+- [`91a416f`](https://github.com/tim-smart/multipasta/commit/91a416fe2c8c174e15a7669ca9da570129544a61) Thanks [@tim-smart](https://github.com/tim-smart)! - fix node backpressure
+
 ## 0.1.6
 
 ### Patch Changes
