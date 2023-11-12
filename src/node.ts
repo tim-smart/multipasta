@@ -103,7 +103,9 @@ export const make = (config: MP.BaseConfig): MultipastaStream =>
 
 export class FileStream extends Readable {
   readonly _tag = "File"
+  readonly filename: string
   constructor(readonly info: MP.PartInfo) {
     super()
+    this.filename = info.filename!
   }
 }
