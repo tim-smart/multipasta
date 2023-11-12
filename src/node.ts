@@ -37,7 +37,6 @@ export class MultipastaStream extends Duplex {
   #parser: MP.Parser
   #canWrite = true
   #writeCallback: (() => void) | undefined
-  #currentFile: FileStream | undefined
 
   constructor(config: NodeConfig) {
     super({ readableObjectMode: true })
@@ -50,22 +49,15 @@ export class MultipastaStream extends Duplex {
       },
       onFile: info => {
         const file = new FileStream(info)
-        this.#currentFile = file
         this.push(file)
         this.emit("file", file)
 
         return chunk => {
           this.#canWrite = file.push(chunk)
-          if (chunk === null) {
-            this.#currentFile = undefined
-          }
         }
       },
       onError: error => {
         this.emit("error", error)
-        if (this.#currentFile !== undefined) {
-          this.#currentFile.emit("error", error)
-        }
       },
       onDone: () => {
         this.push(null)
