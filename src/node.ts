@@ -3,6 +3,9 @@ import type { IncomingHttpHeaders } from "node:http"
 import * as MP from "./index.js"
 import { Duplex, Readable } from "node:stream"
 
+export type { MultipartError, PartInfo } from "./index.js"
+export { decodeField } from "./index.js"
+
 export type Part = Field | FileStream
 
 export interface Field {

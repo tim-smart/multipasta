@@ -1,5 +1,8 @@
 import * as MP from "./index.js"
 
+export type { MultipartError, PartInfo } from "./index.js"
+export { decodeField } from "./index.js"
+
 export type Part = Field | File
 
 export interface Field {
