@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.1.9
+
+### Patch Changes
+
+- [`87329c3`](https://github.com/tim-smart/multipasta/commit/87329c30b6fda1050d5788910b47023ba6629a4f) Thanks [@tim-smart](https://github.com/tim-smart)! - only emit node errors on parser
+
 ## 0.1.8
 
 ### Patch Changes
