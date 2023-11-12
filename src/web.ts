@@ -62,7 +62,7 @@ export const make = (config: WebConfig): MultipastaStream => {
                 chunkResolve = undefined
                 resolve()
               }
-            })
+            }).then(() => this.pull!(controller))
           }
         },
       })
