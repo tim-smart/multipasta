@@ -1,21 +1,24 @@
 import { assert, describe, test } from "vitest"
 import * as Multipart from "../src/index.js"
+import * as Node from "../src/node.js"
+
+type Expected = Array<
+  | [type: "field", name: string, value: string, contentType: string]
+  | [
+      type: "file",
+      name: string,
+      bytesReceived: number,
+      filename: string,
+      contentType: string,
+    ]
+>
 
 interface MultipartCase {
   readonly config?: Partial<Multipart.Config>
   readonly name: string
   readonly source: ReadonlyArray<string>
   readonly boundary: string
-  readonly expected: ReadonlyArray<
-    | [type: "field", name: string, value: string, contentType: string]
-    | [
-        type: "file",
-        name: string,
-        bytesReceived: number,
-        filename: string,
-        contentType: string,
-      ]
-  >
+  readonly expected: Expected
   readonly errors?: ReadonlyArray<Multipart.MultipartError["_tag"]>
 }
 
@@ -509,13 +512,7 @@ const cases: ReadonlyArray<MultipartCase> = [
 
 describe("multipart", () => {
   test.each(cases)("$name", opts => {
-    const parts: Array<
-      readonly [
-        type: "field" | "file",
-        info: Multipart.PartInfo,
-        content: string | number,
-      ]
-    > = []
+    const parts: Expected = []
     const errors: Array<Multipart.MultipartError["_tag"]> = []
 
     const parser = Multipart.make({
@@ -529,12 +526,23 @@ describe("multipart", () => {
           if (chunk) {
             size += chunk.length
           } else {
-            parts.push(["file", info, size])
+            parts.push([
+              "file",
+              info.name,
+              size,
+              info.filename!,
+              info.contentType,
+            ])
           }
         }
       },
       onField: (info, value) => {
-        parts.push(["field", info, Multipart.decodeField(info, value)])
+        parts.push([
+          "field",
+          info.name,
+          Multipart.decodeField(info, value),
+          info.contentType,
+        ])
       },
       onError: error => {
         errors.push(error._tag)
@@ -547,20 +555,7 @@ describe("multipart", () => {
     })
     parser.end()
 
-    assert.strictEqual(opts.expected.length, parts.length)
-
-    opts.expected.forEach((expected, i) => {
-      const part = parts[i]
-      assert.strictEqual(expected[0], part[0])
-      assert.strictEqual(expected[1], part[1].name)
-      assert.strictEqual(expected[2], part[2])
-      if (expected[0] === "field") {
-        assert.strictEqual(expected[3], part[1].contentType)
-      } else {
-        assert.strictEqual(expected[3], part[1].filename)
-      }
-    })
-
+    assert.deepStrictEqual(opts.expected, parts)
     if (opts.errors) {
       assert.deepEqual(opts.errors, errors)
     }
@@ -586,7 +581,7 @@ describe("pull api", () => {
       },
     })
 
-    const parts: Array<Multipart.Part> = []
+    const parts: Expected = []
     let errors: Array<Multipart.MultipartError["_tag"]> = []
 
     function loop() {
@@ -595,7 +590,24 @@ describe("pull api", () => {
           errors = error.errors.map(_ => _._tag)
         }
         if (part !== null) {
-          parts.push(...part)
+          part.forEach(part => {
+            if (part._tag === "Field") {
+              parts.push([
+                "field",
+                part.info.name,
+                Multipart.decodeField(part.info, part.value),
+                part.info.contentType,
+              ])
+            } else {
+              parts.push([
+                "file",
+                part.info.name,
+                0,
+                part.info.filename!,
+                part.info.contentType,
+              ])
+            }
+          })
           loop()
         }
       })
@@ -603,9 +615,62 @@ describe("pull api", () => {
     loop()
 
     assert.strictEqual(opts.expected.length, parts.length)
-
     if (opts.errors) {
       assert.deepEqual(opts.errors, errors)
     }
+  })
+})
+
+describe("node api", () => {
+  test.each(cases)("$name", opts => {
+    const parts: Expected = []
+    const errors: Array<Multipart.MultipartError["_tag"]> = []
+
+    const parser = Node.make({
+      ...(opts.config || {}),
+      headers: {
+        "content-type": "multipart/form-data; boundary=" + opts.boundary,
+      },
+    })
+    parser.on("field", field => {
+      parts.push([
+        "field",
+        field.info.name,
+        Multipart.decodeField(field.info, field.value),
+        field.info.contentType,
+      ])
+    })
+    parser.on("file", file => {
+      let size = 0
+      file.on("data", chunk => {
+        console.log("chunk", chunk.length)
+        size += chunk.length
+      })
+      file.on("end", () => {
+        console.log("end", size)
+        parts.push([
+          "file",
+          file.info.name,
+          size,
+          file.info.filename!,
+          file.info.contentType,
+        ])
+      })
+    })
+    parser.on("error", error => {
+      errors.push(error._tag)
+    })
+
+    parser.on("end", () => {
+      opts.source.forEach(chunk => {
+        parser.write(new TextEncoder().encode(chunk))
+      })
+      parser.end()
+
+      assert.deepStrictEqual(opts.expected, parts)
+      if (opts.errors) {
+        assert.deepEqual(opts.errors, errors)
+      }
+    })
   })
 })

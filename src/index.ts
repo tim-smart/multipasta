@@ -65,6 +65,7 @@ export const decodeField: (info: PartInfo, value: Uint8Array) => string =
 
 export interface File {
   readonly _tag: "File"
+  readonly filename: string
   readonly info: PartInfo
   readonly read: (cb: (chunk: ReadonlyArray<Uint8Array> | null) => void) => void
 }
