@@ -34,13 +34,13 @@ export class MultipastaStream extends Duplex {
       ...config,
       onField: (info, value) => {
         const field: MP.Field = { _tag: "Field", info, value }
-        this.#canWrite = this.push(field)
+        this.push(field)
         this.emit("field", field)
       },
       onFile: info => {
         const file = new FileStream(info)
         this.#currentFile = file
-        this.#canWrite = this.push(file)
+        this.push(file)
         this.emit("file", file)
 
         return chunk => {
@@ -90,10 +90,6 @@ export class MultipastaStream extends Duplex {
 
   _final(callback: (error?: Error | null | undefined) => void): void {
     this.#parser.end()
-    if (this.#writeCallback !== undefined) {
-      this.#writeCallback()
-      this.#writeCallback = undefined
-    }
     callback()
   }
 }
