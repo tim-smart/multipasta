@@ -34,12 +34,8 @@ export type MultipartError =
       readonly _tag: "EndNotReached"
     }
 
-export type Config = {
+export type BaseConfig = {
   readonly headers: Record<string, string>
-  readonly onField: (info: PartInfo, value: Uint8Array) => void
-  readonly onFile: (info: PartInfo) => (chunk: Uint8Array | null) => void
-  readonly onError: (error: MultipartError) => void
-  readonly onDone: () => void
   readonly isFile?: (info: PartInfo) => boolean
   readonly maxParts?: number
   readonly maxTotalSize?: number
@@ -47,10 +43,18 @@ export type Config = {
   readonly maxFieldSize?: number
 }
 
-export const make: (options: Config) => {
+export type Config = BaseConfig & {
+  readonly onField: (info: PartInfo, value: Uint8Array) => void
+  readonly onFile: (info: PartInfo) => (chunk: Uint8Array | null) => void
+  readonly onError: (error: MultipartError) => void
+  readonly onDone: () => void
+}
+export interface Parser {
   readonly write: (chunk: Uint8Array) => void
   readonly end: () => void
-} = internal.make
+}
+
+export const make: (options: Config) => Parser = internal.make
 
 export const defaultIsFile: (info: PartInfo) => boolean = internal.defaultIsFile
 
@@ -76,16 +80,10 @@ export const isField: (part: Part) => part is Field = internal.isField
 
 export type Part = File | Field
 
-export type PullConfig<E> = {
+export type PullConfig<E> = BaseConfig & {
   readonly pull: (
     cb: (err: E | null, chunk: ReadonlyArray<Uint8Array> | null) => void,
   ) => void
-  readonly headers: Record<string, string>
-  readonly isFile?: (info: PartInfo) => boolean
-  readonly maxParts?: number
-  readonly maxTotalSize?: number
-  readonly maxPartSize?: number
-  readonly maxFieldSize?: number
 }
 
 export interface MultipartPullError<E> {
