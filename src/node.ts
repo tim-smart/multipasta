@@ -2,10 +2,16 @@ import type { IncomingHttpHeaders } from "node:http"
 import * as MP from "./index.js"
 import { Duplex, Readable } from "node:stream"
 
-export type Part = MP.Field | FileStream
+export type Part = Field | FileStream
+
+export interface Field {
+  readonly _tag: "Field"
+  readonly info: MP.PartInfo
+  readonly value: Uint8Array
+}
 
 export interface MultipastaStream extends Duplex {
-  on(event: "field", listener: (field: MP.Field) => void): this
+  on(event: "field", listener: (field: Field) => void): this
   on(event: "file", listener: (file: FileStream) => void): this
   on(event: "close", listener: () => void): this
   on(event: "data", listener: (part: Part) => void): this
@@ -38,7 +44,7 @@ export class MultipastaStream extends Duplex {
     this.#parser = MP.make({
       ...(config as any),
       onField: (info, value) => {
-        const field: MP.Field = { _tag: "Field", info, value }
+        const field: Field = { _tag: "Field", info, value }
         this.push(field)
         this.emit("field", field)
       },

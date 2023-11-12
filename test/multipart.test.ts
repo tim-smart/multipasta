@@ -562,65 +562,6 @@ describe("multipart", () => {
   })
 })
 
-describe("pull api", () => {
-  test.each(cases)("$name", opts => {
-    const iterator = opts.source[Symbol.iterator]()
-
-    const parser = Multipart.makePull({
-      ...(opts.config || {}),
-      headers: {
-        "content-type": "multipart/form-data; boundary=" + opts.boundary,
-      },
-      pull(cb) {
-        const val = iterator.next()
-        if (val.done) {
-          cb(null, null)
-        } else {
-          cb(null, [new TextEncoder().encode(val.value)])
-        }
-      },
-    })
-
-    const parts: Expected = []
-    let errors: Array<Multipart.MultipartError["_tag"]> = []
-
-    function loop() {
-      parser(function (error, part) {
-        if (error) {
-          errors = error.errors.map(_ => _._tag)
-        }
-        if (part !== null) {
-          part.forEach(part => {
-            if (part._tag === "Field") {
-              parts.push([
-                "field",
-                part.info.name,
-                Multipart.decodeField(part.info, part.value),
-                part.info.contentType,
-              ])
-            } else {
-              parts.push([
-                "file",
-                part.info.name,
-                0,
-                part.info.filename!,
-                part.info.contentType,
-              ])
-            }
-          })
-          loop()
-        }
-      })
-    }
-    loop()
-
-    assert.strictEqual(opts.expected.length, parts.length)
-    if (opts.errors) {
-      assert.deepEqual(opts.errors, errors)
-    }
-  })
-})
-
 describe("node api", () => {
   test.each(cases)("$name", opts => {
     const parts: Expected = []
