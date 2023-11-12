@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import type { IncomingHttpHeaders } from "node:http"
 import * as MP from "./index.js"
 import { Duplex, Readable } from "node:stream"

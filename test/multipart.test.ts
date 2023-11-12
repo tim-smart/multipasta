@@ -1,6 +1,8 @@
 import { assert, describe, test } from "vitest"
 import * as Multipart from "../src/index.js"
 import * as Node from "../src/node.js"
+import * as Web from "../src/web.js"
+import { c } from "vitest/dist/reporters-5f784f42.js"
 
 type Expected = Array<
   | [type: "field", name: string, value: string, contentType: string]
@@ -584,11 +586,9 @@ describe("node api", () => {
     parser.on("file", file => {
       let size = 0
       file.on("data", chunk => {
-        console.log("chunk", chunk.length)
         size += chunk.length
       })
       file.on("end", () => {
-        console.log("end", size)
         parts.push([
           "file",
           file.info.name,
@@ -603,15 +603,73 @@ describe("node api", () => {
     })
 
     parser.on("end", () => {
-      opts.source.forEach(chunk => {
-        parser.write(new TextEncoder().encode(chunk))
-      })
-      parser.end()
-
       assert.deepStrictEqual(opts.expected, parts)
       if (opts.errors) {
         assert.deepEqual(opts.errors, errors)
       }
     })
+
+    opts.source.forEach(chunk => {
+      parser.write(new TextEncoder().encode(chunk))
+    })
+    parser.end()
+  })
+})
+
+describe("web api", () => {
+  test.each(cases)("$name", async opts => {
+    const parts: Expected = []
+
+    const parser = Web.make({
+      ...(opts.config || {}),
+      headers: new Headers({
+        "content-type": "multipart/form-data; boundary=" + opts.boundary,
+      }),
+    })
+
+    async function read() {
+      const reader = parser.readable.getReader()
+      while (true) {
+        const result = await reader.read()
+        if (result.done) {
+          break
+        }
+        const part = result.value
+        if (part._tag === "Field") {
+          parts.push([
+            "field",
+            part.info.name,
+            Multipart.decodeField(part.info, part.value),
+            part.info.contentType,
+          ])
+        } else {
+          const response = await new Response(part.readable).arrayBuffer()
+          parts.push([
+            "file",
+            part.info.name,
+            response.byteLength,
+            part.info.filename!,
+            part.info.contentType,
+          ])
+        }
+      }
+    }
+
+    const readPromise = read()
+    const writer = parser.writable.getWriter()
+
+    try {
+      for (const chunk of opts.source) {
+        await writer.write(new TextEncoder().encode(chunk))
+      }
+      await writer.close()
+      await readPromise
+
+      assert.deepStrictEqual(opts.expected, parts)
+    } catch (err) {
+      if (opts.errors) {
+        assert(opts.errors.length > 0)
+      }
+    }
   })
 })

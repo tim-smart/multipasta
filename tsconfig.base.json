@@ -12,7 +12,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "moduleResolution": "NodeNext",
-    "lib": ["ES2022", "DOM"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "isolatedModules": true,
     "sourceMap": true,
     "declarationMap": true,
@@ -35,6 +35,7 @@
     "module": "NodeNext",
     "incremental": true,
     "removeComments": false,
+    "types": [],
     "plugins": [
       {
         "name": "@effect/language-service"
