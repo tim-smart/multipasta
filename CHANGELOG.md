@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.1.11
+
+### Patch Changes
+
+- [`2d43f89`](https://github.com/tim-smart/multipasta/commit/2d43f89b1cab57fcfe8581355b147112bb869729) Thanks [@tim-smart](https://github.com/tim-smart)! - fix web file read loop
+
 ## 0.1.10
 
 ### Patch Changes
