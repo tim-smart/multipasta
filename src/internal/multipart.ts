@@ -272,10 +272,14 @@ export function isField(part: Part): part is Field {
 
 class FileImpl implements File {
   readonly _tag = "File"
+  readonly filename: string
+
   constructor(
     readonly info: PartInfo,
     private pull: (cb: () => void) => void,
-  ) {}
+  ) {
+    this.filename = info.filename!
+  }
 
   buffer: Array<Uint8Array> = []
   hasData = false

@@ -37,6 +37,7 @@
     "@changesets/cli": "^2.26.2",
     "@effect/build-utils": "^0.3.1",
     "@effect/language-service": "^0.0.21",
+    "@types/node": "^20.9.0",
     "@vitest/browser": "^0.34.6",
     "babel-plugin-annotate-pure-calls": "^0.4.0",
     "playwright": "^1.39.0",
