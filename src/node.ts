@@ -60,28 +60,32 @@ export class MultipastaStream extends Duplex {
         this.push(null)
       },
     })
+
+    this.on("drain", () => {
+      this.#canWrite = true
+      if (this.#writeCallback !== undefined) {
+        this.#writeCallback()
+        this.#writeCallback = undefined
+      }
+    })
   }
 
-  _read(_size: number) {
-    if (this.#writeCallback !== undefined) {
-      this.#canWrite = true
-      this.#writeCallback()
-      this.#writeCallback = undefined
-    }
-  }
+  _read(_size: number) {}
 
   _write(
     chunk: any,
     encoding: BufferEncoding,
     callback: (error?: Error | null | undefined) => void,
   ): void {
+    const canWrite = this.#canWrite
+
     if (chunk instanceof Uint8Array) {
       this.#parser.write(chunk)
     } else {
       this.#parser.write(Buffer.from(chunk, encoding))
     }
 
-    if (this.#canWrite) {
+    if (canWrite) {
       callback()
     } else {
       this.#writeCallback = callback
@@ -104,4 +108,5 @@ export class FileStream extends Readable {
     super()
     this.filename = info.filename!
   }
+  _read(_size: number) {}
 }
