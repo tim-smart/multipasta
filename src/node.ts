@@ -1,3 +1,4 @@
+import type { IncomingHttpHeaders } from "node:http"
 import * as MP from "./index.js"
 import { Duplex, Readable } from "node:stream"
 
@@ -22,16 +23,20 @@ export interface MultipastaStream extends Duplex {
   read(size?: number): Part | null
 }
 
+export type NodeConfig = Omit<MP.BaseConfig, "headers"> & {
+  readonly headers: IncomingHttpHeaders
+}
+
 export class MultipastaStream extends Duplex {
   #parser: MP.Parser
   #canWrite = true
   #writeCallback: (() => void) | undefined
   #currentFile: FileStream | undefined
 
-  constructor(config: MP.BaseConfig) {
+  constructor(config: NodeConfig) {
     super({ readableObjectMode: true })
     this.#parser = MP.make({
-      ...config,
+      ...(config as any),
       onField: (info, value) => {
         const field: MP.Field = { _tag: "Field", info, value }
         this.push(field)
@@ -98,7 +103,7 @@ export class MultipastaStream extends Duplex {
   }
 }
 
-export const make = (config: MP.BaseConfig): MultipastaStream =>
+export const make = (config: NodeConfig): MultipastaStream =>
   new MultipastaStream(config)
 
 export class FileStream extends Readable {
