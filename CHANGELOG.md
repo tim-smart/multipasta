@@ -1,5 +1,13 @@
 # multipasta
 
+## 0.1.8
+
+### Patch Changes
+
+- [`0597c80`](https://github.com/tim-smart/multipasta/commit/0597c801260917351ff5c1124cde5c36ba153cbc) Thanks [@tim-smart](https://github.com/tim-smart)! - remove pull api
+
+- [`d5c1736`](https://github.com/tim-smart/multipasta/commit/d5c1736fcc510c2b01654d0d2300f81ad1a6ed20) Thanks [@tim-smart](https://github.com/tim-smart)! - support IncomingHttpHeaders for node
+
 ## 0.1.7
 
 ### Patch Changes
