@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.1.6
+
+### Patch Changes
+
+- [#7](https://github.com/tim-smart/multipasta/pull/7) [`9877b3c`](https://github.com/tim-smart/multipasta/commit/9877b3c9b6eb79b1edf32dcbd215b74264267461) Thanks [@tim-smart](https://github.com/tim-smart)! - add node stream wrapper
+
 ## 0.1.5
 
 ### Patch Changes
