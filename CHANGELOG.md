@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.1.12
+
+### Patch Changes
+
+- [`596b4b2`](https://github.com/tim-smart/multipasta/commit/596b4b2c992f3aac3b4dbc388ab95bec456ef3ca) Thanks [@tim-smart](https://github.com/tim-smart)! - optimization if Buffer api is available
+
 ## 0.1.11
 
 ### Patch Changes
