@@ -32,7 +32,6 @@ export const make = (config: WebConfig): MultipastaStream => {
   let partBuffer: Array<Part> = []
   let readResolve: (() => void) | undefined
   let finished = false
-  let writeController: WritableStreamDefaultController | undefined
 
   const parser = MP.make({
     ...config,
@@ -82,10 +81,8 @@ export const make = (config: WebConfig): MultipastaStream => {
       }
     },
     onError(error_) {
+      if (error !== undefined) return
       error = error_
-      if (writeController !== undefined) {
-        writeController.error(error)
-      }
       if (readResolve !== undefined) readResolve()
     },
 
@@ -97,7 +94,6 @@ export const make = (config: WebConfig): MultipastaStream => {
 
   const writable = new WritableStream<Uint8Array>({
     write(chunk, controller) {
-      writeController = controller
       parser.write(chunk)
     },
     close() {

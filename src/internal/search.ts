@@ -166,6 +166,77 @@ export function make(
     }
   }
 
+  function writeBuffer(chunk_: Buffer | Uint8Array): void {
+    let chunk = Buffer.isBuffer(chunk_) ? chunk_ : Buffer.from(chunk_)
+    let chunkLength = chunk.length
+
+    if (chunkLength < state.needleLength) {
+      if (state.previousChunk === undefined) {
+        state.previousChunk = chunk
+        state.previousChunkLength = chunkLength
+        return
+      }
+    }
+
+    if (state.previousChunk !== undefined) {
+      const newChunk = Buffer.allocUnsafe(
+        state.previousChunkLength + chunkLength,
+      )
+      newChunk.set(state.previousChunk)
+      newChunk.set(chunk, state.previousChunkLength)
+      chunk = newChunk
+      chunkLength = state.previousChunkLength + chunkLength
+      state.previousChunk = undefined
+    }
+
+    let pos = 0
+    while (pos < chunkLength) {
+      const match = chunk.indexOf(state.needle, pos)
+
+      if (match > -1) {
+        if (match > pos) {
+          callback(state.matchIndex, chunk.subarray(pos, match))
+        }
+        state.matchIndex += 1
+        pos = match + state.needleLength
+      } else if (chunk[chunkLength - 1] in state.indexes) {
+        const indexes = state.indexes[chunk[chunkLength - 1]]
+        let earliestIndex = -1
+        for (let i = 0, len = indexes.length; i < len; i++) {
+          const index = indexes[i]
+          if (
+            chunk[chunkLength - 1 - index] === state.firstByte &&
+            i > earliestIndex
+          ) {
+            earliestIndex = index
+          }
+        }
+        if (earliestIndex === -1) {
+          if (pos === 0) {
+            callback(state.matchIndex, chunk)
+          } else {
+            callback(state.matchIndex, chunk.subarray(pos))
+          }
+        } else {
+          callback(
+            state.matchIndex,
+            chunk.subarray(pos, chunkLength - 1 - earliestIndex),
+          )
+          state.previousChunk = chunk.subarray(chunkLength - 1 - earliestIndex)
+          state.previousChunkLength = earliestIndex + 1
+        }
+        break
+      } else {
+        if (pos === 0) {
+          callback(state.matchIndex, chunk)
+        } else {
+          callback(state.matchIndex, chunk.subarray(pos))
+        }
+        break
+      }
+    }
+  }
+
   function end(): void {
     if (state.previousChunk !== undefined && state.previousChunk !== seed) {
       callback(state.matchIndex, state.previousChunk)
@@ -176,5 +247,8 @@ export function make(
     state.matchIndex = 0
   }
 
-  return { write, end } as const
+  return {
+    write: "Buffer" in globalThis ? writeBuffer : write,
+    end,
+  } as const
 }
