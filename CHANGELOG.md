@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.1.14
+
+### Patch Changes
+
+- [`553dbce`](https://github.com/tim-smart/multipasta/commit/553dbcebc3b36fbbd959b65eb1c45f0966792451) Thanks [@tim-smart](https://github.com/tim-smart)! - fix issue with headers over multiple chunks
+
 ## 0.1.13
 
 ### Patch Changes
