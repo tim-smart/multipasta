@@ -218,10 +218,12 @@ export function make(
             callback(state.matchIndex, chunk.subarray(pos))
           }
         } else {
-          callback(
-            state.matchIndex,
-            chunk.subarray(pos, chunkLength - 1 - earliestIndex),
-          )
+          if (chunkLength - 1 - earliestIndex > pos) {
+            callback(
+              state.matchIndex,
+              chunk.subarray(pos, chunkLength - 1 - earliestIndex),
+            )
+          }
           state.previousChunk = chunk.subarray(chunkLength - 1 - earliestIndex)
           state.previousChunkLength = earliestIndex + 1
         }

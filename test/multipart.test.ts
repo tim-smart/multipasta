@@ -2,7 +2,6 @@ import { assert, describe, test } from "vitest"
 import * as Multipart from "../src/index.js"
 import * as Node from "../src/node.js"
 import * as Web from "../src/web.js"
-import { c } from "vitest/dist/reporters-5f784f42.js"
 
 type Expected = Array<
   | [type: "field", name: string, value: string, contentType: string]
@@ -57,6 +56,19 @@ const cases: ReadonlyArray<MultipartCase> = [
       ["file", "upload_file_1", 1023, "1k_b.dat", "application/octet-stream"],
     ],
     name: "Fields and files",
+  },
+  {
+    source: [
+      "-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k\r\n",
+      'Content-Disposition: form-data; name="file_name_0"\r\n',
+      "\r\n",
+      "super alpha file\r\n",
+      "-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k--",
+    ],
+    boundary: "---------------------------paZqsnEHRufoShdX6fh0lUhXBP4k",
+    expected: [["field", "file_name_0", "super alpha file", "text/plain"]],
+    name: "Headers over multiple chunks",
+    errors: [],
   },
   {
     source: [

@@ -1,3 +1,4 @@
+import { stat } from "fs"
 import { Continue, FailureReason, ReturnValue } from "../HeadersParser.js"
 
 const constMaxPairs = 100
@@ -40,6 +41,8 @@ export function make() {
     key: "",
     value: "",
     crlf: 0,
+    previousChunk: undefined as undefined | Uint8Array,
+    previousStart: 0,
     pairs: 0,
     size: 0,
   }
@@ -50,6 +53,8 @@ export function make() {
     state.key = ""
     state.value = ""
     state.crlf = 0
+    state.previousChunk = undefined
+    state.previousStart = 0
     state.pairs = 0
     state.size = 0
     return value
@@ -60,6 +65,19 @@ export function make() {
   }
 
   return function write(chunk: Uint8Array, start: number): ReturnValue {
+    let endOffset = 0
+    let previousCursor: number | undefined
+    if (state.previousChunk !== undefined) {
+      endOffset = state.previousChunk.length
+      previousCursor = endOffset
+
+      const newChunk = new Uint8Array(chunk.length + endOffset)
+      newChunk.set(state.previousChunk)
+      newChunk.set(chunk, endOffset)
+      state.previousChunk = undefined
+      chunk = newChunk
+      start = state.previousStart
+    }
     const end = chunk.length
 
     outer: while (start < end) {
@@ -121,6 +139,10 @@ export function make() {
 
       if (state.state === State.value) {
         let i = start
+        if (previousCursor !== undefined) {
+          i = previousCursor
+          previousCursor = undefined
+        }
         for (; i < end; i++) {
           if (state.size++ > constMaxSize) {
             return error("HeaderTooLarge")
@@ -153,7 +175,11 @@ export function make() {
               state.size++
             }
 
-            if (state.crlf >= 2) {
+            if (state.crlf < 4 && i >= end) {
+              state.previousChunk = chunk.subarray(start)
+              state.previousStart = start
+              return constContinue
+            } else if (state.crlf >= 2) {
               state.value += decoder.decode(chunk.slice(start, i - state.crlf))
               state.headers[state.key] = state.value
 
@@ -168,7 +194,7 @@ export function make() {
                 return reset({
                   _tag: "Headers",
                   headers: state.headers,
-                  endPosition: start,
+                  endPosition: start - endOffset,
                 })
               }
 
