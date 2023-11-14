@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.1.15
+
+### Patch Changes
+
+- [`a253822`](https://github.com/tim-smart/multipasta/commit/a2538228912c5c6a296434aa214781afccc0df4c) Thanks [@tim-smart](https://github.com/tim-smart)! - don't compile matcher if Buffer api is present
+
 ## 0.1.14
 
 ### Patch Changes
