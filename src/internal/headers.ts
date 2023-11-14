@@ -68,12 +68,11 @@ export function make() {
       endOffset = state.previousChunk.length
       previousCursor = endOffset
 
-      const newChunk = new Uint8Array(chunk.length + endOffset)
+      const newChunk = new Uint8Array(chunk.length + endOffset - start)
       newChunk.set(state.previousChunk)
       newChunk.set(chunk, endOffset)
       state.previousChunk = undefined
       chunk = newChunk
-      start = 0
     }
     const end = chunk.length
 
