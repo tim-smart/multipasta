@@ -1,4 +1,3 @@
-import { stat } from "fs"
 import { Continue, FailureReason, ReturnValue } from "../HeadersParser.js"
 
 const constMaxPairs = 100
