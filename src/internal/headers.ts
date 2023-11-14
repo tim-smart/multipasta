@@ -41,7 +41,6 @@ export function make() {
     value: "",
     crlf: 0,
     previousChunk: undefined as undefined | Uint8Array,
-    previousStart: 0,
     pairs: 0,
     size: 0,
   }
@@ -53,7 +52,6 @@ export function make() {
     state.value = ""
     state.crlf = 0
     state.previousChunk = undefined
-    state.previousStart = 0
     state.pairs = 0
     state.size = 0
     return value
@@ -75,7 +73,7 @@ export function make() {
       newChunk.set(chunk, endOffset)
       state.previousChunk = undefined
       chunk = newChunk
-      start = state.previousStart
+      start = 0
     }
     const end = chunk.length
 
@@ -176,7 +174,6 @@ export function make() {
 
             if (state.crlf < 4 && i >= end) {
               state.previousChunk = chunk.subarray(start)
-              state.previousStart = start
               return constContinue
             } else if (state.crlf >= 2) {
               state.value += decoder.decode(chunk.slice(start, i - state.crlf))
