@@ -72,6 +72,21 @@ const cases: ReadonlyArray<MultipartCase> = [
   },
   {
     source: [
+      "-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k",
+      'Content-Disposition: form-data; name="file_name_0"',
+      "",
+      "super alpha file",
+      "-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k--",
+    ]
+      .join("\r\n")
+      .split(""),
+    boundary: "---------------------------paZqsnEHRufoShdX6fh0lUhXBP4k",
+    expected: [["field", "file_name_0", "super alpha file", "text/plain"]],
+    name: "Headers over single byte chunks",
+    errors: [],
+  },
+  {
+    source: [
       [
         "------WebKitFormBoundaryTB2MiQ36fnSJlrhY",
         'Content-Disposition: form-data; name="cont"',
