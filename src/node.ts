@@ -38,13 +38,13 @@ export type NodeConfig = Omit<MP.BaseConfig, "headers"> & {
 }
 
 export class MultipastaStream extends Duplex {
-  #parser: MP.Parser
-  #canWrite = true
-  #writeCallback: (() => void) | undefined
+  private _parser: MP.Parser
+  private _canWrite = true
+  private _writeCallback: (() => void) | undefined
 
   constructor(config: NodeConfig) {
     super({ readableObjectMode: true })
-    this.#parser = MP.make({
+    this._parser = MP.make({
       ...(config as any),
       onField: (info, value) => {
         const field: Field = { _tag: "Field", info, value }
@@ -53,11 +53,14 @@ export class MultipastaStream extends Duplex {
       },
       onFile: info => {
         const file = new FileStream(info)
+        file.on("resume", this._resume.bind(this))
         this.push(file)
         this.emit("file", file)
-
         return chunk => {
-          this.#canWrite = file.push(chunk)
+          this._canWrite = file.push(chunk)
+          if (chunk === null && !this._canWrite) {
+            this._resume()
+          }
         }
       },
       onError: error => {
@@ -67,14 +70,14 @@ export class MultipastaStream extends Duplex {
         this.push(null)
       },
     })
+  }
 
-    this.on("drain", () => {
-      this.#canWrite = true
-      if (this.#writeCallback !== undefined) {
-        this.#writeCallback()
-        this.#writeCallback = undefined
-      }
-    })
+  _resume() {
+    this._canWrite = true
+    if (this._writeCallback !== undefined) {
+      this._writeCallback()
+      this._writeCallback = undefined
+    }
   }
 
   _read(_size: number) {}
@@ -84,23 +87,18 @@ export class MultipastaStream extends Duplex {
     encoding: BufferEncoding,
     callback: (error?: Error | null | undefined) => void,
   ): void {
-    const canWrite = this.#canWrite
-
-    if (chunk instanceof Uint8Array) {
-      this.#parser.write(chunk)
-    } else {
-      this.#parser.write(Buffer.from(chunk, encoding))
-    }
-
-    if (canWrite) {
+    this._parser.write(
+      chunk instanceof Uint8Array ? chunk : Buffer.from(chunk, encoding),
+    )
+    if (this._canWrite) {
       callback()
     } else {
-      this.#writeCallback = callback
+      this._writeCallback = callback
     }
   }
 
   _final(callback: (error?: Error | null | undefined) => void): void {
-    this.#parser.end()
+    this._parser.end()
     callback()
   }
 }
