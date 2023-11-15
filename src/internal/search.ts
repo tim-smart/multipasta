@@ -177,14 +177,6 @@ export function make(
     let chunk = Buffer.isBuffer(chunk_) ? chunk_ : Buffer.from(chunk_)
     let chunkLength = chunk.length
 
-    if (chunkLength < state.needleLength) {
-      if (state.previousChunk === undefined) {
-        state.previousChunk = chunk
-        state.previousChunkLength = chunkLength
-        return
-      }
-    }
-
     if (state.previousChunk !== undefined) {
       const newChunk = Buffer.allocUnsafe(
         state.previousChunkLength + chunkLength,
@@ -194,6 +186,12 @@ export function make(
       chunk = newChunk
       chunkLength = state.previousChunkLength + chunkLength
       state.previousChunk = undefined
+    }
+
+    if (chunkLength < state.needleLength) {
+      state.previousChunk = chunk
+      state.previousChunkLength = chunkLength
+      return
     }
 
     let pos = 0
@@ -206,6 +204,7 @@ export function make(
         }
         state.matchIndex += 1
         pos = match + state.needleLength
+        continue
       } else if (chunk[chunkLength - 1] in state.indexes) {
         const indexes = state.indexes[chunk[chunkLength - 1]]
         let earliestIndex = -1
@@ -234,15 +233,13 @@ export function make(
           state.previousChunk = chunk.subarray(chunkLength - 1 - earliestIndex)
           state.previousChunkLength = earliestIndex + 1
         }
-        break
+      } else if (pos === 0) {
+        callback(state.matchIndex, chunk)
       } else {
-        if (pos === 0) {
-          callback(state.matchIndex, chunk)
-        } else {
-          callback(state.matchIndex, chunk.subarray(pos))
-        }
-        break
+        callback(state.matchIndex, chunk.subarray(pos))
       }
+
+      break
     }
   }
 
