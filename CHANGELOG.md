@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.1.16
+
+### Patch Changes
+
+- [`871713a`](https://github.com/tim-smart/multipasta/commit/871713a7649e6ba05885f499b54d8c56c7a2479f) Thanks [@tim-smart](https://github.com/tim-smart)! - fix needle length check order
+
 ## 0.1.15
 
 ### Patch Changes
