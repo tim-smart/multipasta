@@ -1,5 +1,13 @@
 # multipasta
 
+## 0.1.17
+
+### Patch Changes
+
+- [`83fe309`](https://github.com/tim-smart/multipasta/commit/83fe309e05a0251af65c2cc82ffde9b4f168733c) Thanks [@tim-smart](https://github.com/tim-smart)! - fix uint8array search for small chunks
+
+- [`fc69ce9`](https://github.com/tim-smart/multipasta/commit/fc69ce952a3f9f95997b35c78ca143b852ddfccd) Thanks [@tim-smart](https://github.com/tim-smart)! - fix node stream backpressure
+
 ## 0.1.16
 
 ### Patch Changes
