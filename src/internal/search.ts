@@ -21,7 +21,7 @@ function makeState(needle_: string): SearchState {
   const needleLength = needle.length
 
   const indexes: Record<number, number[]> = {}
-  for (let i = 0; i < needle.length; i++) {
+  for (let i = 0; i < needleLength; i++) {
     const b = needle[i]
     if (indexes[b] === undefined) indexes[b] = []
     indexes[b].push(i)
@@ -30,18 +30,15 @@ function makeState(needle_: string): SearchState {
   const needleFirstVariationIndex = needle.findIndex(b => b !== needle[0]) ?? 1
   const needleFirstVariation = needle[needleFirstVariationIndex]
 
-  const exactMatch =
-    "Buffer" in globalThis
-      ? noopMatch
-      : (new Function(
-          "chunk",
-          "start",
-          "return " +
-            [...needle]
-              .filter((_, i) => i !== 0 || i !== needleFirstVariationIndex)
-              .map((b, i) => `chunk[start + ${i}] === ${b}`)
-              .join(" && "),
-        ) as (chunk: Uint8Array, start: number) => boolean)
+  const exactMatch = new Function(
+    "chunk",
+    "start",
+    "return " +
+      [...needle]
+        .filter((_, i) => i !== 0 || i !== needleFirstVariationIndex)
+        .map((b, i) => `chunk[start + ${i}] === ${b}`)
+        .join(" && "),
+  ) as (chunk: Uint8Array, start: number) => boolean
 
   return {
     needle,
@@ -57,24 +54,6 @@ function makeState(needle_: string): SearchState {
   }
 }
 
-function emitMatch(
-  state: SearchState,
-  chunk: Uint8Array,
-  startPos: number,
-  callback: (index: number, chunk: Uint8Array) => void,
-) {
-  if (state.previousChunk !== undefined) {
-    callback(state.matchIndex, state.previousChunk)
-    state.previousChunk = undefined
-  }
-
-  if (startPos > 0) {
-    callback(state.matchIndex, chunk.subarray(0, startPos))
-  }
-
-  state.matchIndex += 1
-}
-
 export function make(
   needle: string,
   callback: (index: number, chunk: Uint8Array) => void,
@@ -86,26 +65,28 @@ export function make(
     state.previousChunkLength = seed.length
   }
 
-  function write(chunk: Uint8Array): void {
-    let chunkLength = chunk.length
-    if (chunkLength < state.needleLength) {
-      if (state.previousChunk === undefined) {
-        state.previousChunk = chunk
-        state.previousChunkLength = chunkLength
-        return
-      }
-
-      if (state.previousChunkLength + chunkLength < state.needleLength) {
-        const newChunk = new Uint8Array(state.previousChunkLength + chunkLength)
-        newChunk.set(state.previousChunk)
-        newChunk.set(chunk, state.previousChunkLength)
-        state.previousChunk = newChunk
-        state.previousChunkLength = newChunk.length
-        return
-      }
+  function writeUint8Array(chunk: Uint8Array): void {
+    if (state.previousChunk !== undefined) {
+      const newChunk = new Uint8Array(state.previousChunkLength + chunk.length)
+      newChunk.set(state.previousChunk)
+      newChunk.set(chunk, state.previousChunkLength)
+      chunk = newChunk
+      state.previousChunk = undefined
+      state.previousChunkLength = 0
     }
 
-    outer: for (let i = 0; i < chunkLength; i += state.needleLength) {
+    let chunkLength = chunk.length
+    if (chunkLength < state.needleLength) {
+      state.previousChunk = chunk
+      state.previousChunkLength = chunkLength
+      return
+    }
+
+    outer: for (
+      let i = state.needleLength - 1;
+      i < chunkLength;
+      i += state.needleLength
+    ) {
       if (chunk[i] in state.indexes === false) {
         continue
       }
@@ -114,36 +95,18 @@ export function make(
       for (let j = 0; j < indexes.length; j++) {
         const startPosition = i - indexes[j]
 
-        if (startPosition + state.needleLength > chunkLength) {
-          continue
-        }
-
         if (startPosition < 0) {
-          if (state.previousChunk === undefined) {
-            continue
-          } else if (
-            state.previousChunk[state.previousChunkLength + startPosition] ===
-            state.firstByte
+          continue
+        } else if (startPosition + state.needleLength > chunkLength) {
+          if (
+            chunk[startPosition] === state.firstByte &&
+            chunk[chunkLength - 1] ===
+              state.needle[chunkLength - startPosition - 1]
           ) {
-            const newChunk = new Uint8Array(
-              state.previousChunkLength + chunkLength,
-            )
-            newChunk.set(state.previousChunk)
-            newChunk.set(chunk, state.previousChunkLength)
-            chunk = newChunk
-            state.previousChunk = undefined
-            chunkLength = newChunk.length
-            i += state.previousChunkLength
-            const newStartPosition = state.previousChunkLength + startPosition
-
-            if (state.exactMatch(chunk, newStartPosition)) {
-              state.previousChunk = undefined
-              emitMatch(state, chunk, newStartPosition, callback)
-              chunk = chunk.subarray(newStartPosition + state.needleLength)
-              chunkLength = chunk.length
-              i = -1
-              continue outer
-            }
+            callback(state.matchIndex, chunk.subarray(0, startPosition))
+            state.previousChunk = chunk.subarray(startPosition)
+            state.previousChunkLength = chunkLength - startPosition
+            return
           }
         } else if (
           chunk[startPosition] === state.firstByte &&
@@ -151,7 +114,10 @@ export function make(
             state.needleFirstVariation &&
           state.exactMatch(chunk, startPosition)
         ) {
-          emitMatch(state, chunk, startPosition, callback)
+          if (startPosition > 0) {
+            callback(state.matchIndex, chunk.subarray(0, startPosition))
+          }
+          state.matchIndex += 1
           chunk = chunk.subarray(startPosition + state.needleLength)
           chunkLength = chunkLength - startPosition - state.needleLength
           i = -1
@@ -160,16 +126,34 @@ export function make(
       }
     }
 
-    if (state.previousChunk !== undefined) {
-      callback(state.matchIndex, state.previousChunk)
-      state.previousChunk = chunk
-      state.previousChunkLength = chunkLength
-    } else if (chunkLength > 0) {
-      state.previousChunk = chunk
-      state.previousChunkLength = chunkLength
-    } else {
-      state.previousChunk = undefined
-      state.previousChunkLength = 0
+    if (chunkLength > 0) {
+      if (chunk[chunkLength - 1] in state.indexes) {
+        const indexes = state.indexes[chunk[chunkLength - 1]]
+        let earliestIndex = -1
+        for (let i = 0, len = indexes.length; i < len; i++) {
+          const index = indexes[i]
+          if (
+            chunk[chunkLength - 1 - index] === state.firstByte &&
+            i > earliestIndex
+          ) {
+            earliestIndex = index
+          }
+        }
+        if (earliestIndex === -1) {
+          callback(state.matchIndex, chunk)
+        } else {
+          if (chunkLength - 1 - earliestIndex > 0) {
+            callback(
+              state.matchIndex,
+              chunk.subarray(0, chunkLength - 1 - earliestIndex),
+            )
+          }
+          state.previousChunk = chunk.subarray(chunkLength - 1 - earliestIndex)
+          state.previousChunkLength = earliestIndex + 1
+        }
+      } else {
+        callback(state.matchIndex, chunk)
+      }
     }
   }
 
@@ -254,7 +238,7 @@ export function make(
   }
 
   return {
-    write: "Buffer" in globalThis ? writeBuffer : write,
+    write: "Buffer" in globalThis ? writeBuffer : writeUint8Array,
     end,
   } as const
 }
