@@ -103,8 +103,59 @@ export class MultipastaStream extends Duplex {
   }
 }
 
+export class EagerMultipastaStream extends Duplex {
+  private _parser: MP.Parser
+
+  constructor(config: NodeConfig) {
+    super({ readableObjectMode: true })
+    this._parser = MP.make({
+      ...(config as any),
+      onField: (info, value) => {
+        const field: Field = { _tag: "Field", info, value }
+        this.push(field)
+        this.emit("field", field)
+      },
+      onFile: info => {
+        const file = new FileStream(info)
+        this.push(file)
+        this.emit("file", file)
+        return chunk => {
+          file.push(chunk)
+        }
+      },
+      onError: error => {
+        this.emit("error", error)
+      },
+      onDone: () => {
+        this.push(null)
+      },
+    })
+  }
+
+  _read(_size: number) {}
+
+  _write(
+    chunk: any,
+    encoding: BufferEncoding,
+    callback: (error?: Error | null | undefined) => void,
+  ): void {
+    this._parser.write(
+      chunk instanceof Uint8Array ? chunk : Buffer.from(chunk, encoding),
+    )
+    callback()
+  }
+
+  _final(callback: (error?: Error | null | undefined) => void): void {
+    this._parser.end()
+    callback()
+  }
+}
+
 export const make = (config: NodeConfig): MultipastaStream =>
   new MultipastaStream(config)
+
+export const makeEager = (config: NodeConfig): EagerMultipastaStream =>
+  new EagerMultipastaStream(config)
 
 export class FileStream extends Readable {
   readonly _tag = "File"
