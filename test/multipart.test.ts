@@ -59,6 +59,39 @@ const cases: ReadonlyArray<MultipartCase> = [
   },
   {
     source: [
+      [
+        "-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k",
+        'Content-Disposition: form-data; name="file_name_0"',
+        "",
+        "super alpha file",
+        "-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k",
+        'Content-Disposition: form-data; name="file_name_1"',
+        "",
+        "super beta file",
+        "-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k",
+        'Content-Disposition: form-data; name="upload_file_0"; filename="1k_a.dat"',
+        "Content-Type: application/octet-stream",
+        "",
+        "A".repeat(1024 * 1024),
+        "-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k--",
+      ].join("\r\n"),
+    ],
+    boundary: "---------------------------paZqsnEHRufoShdX6fh0lUhXBP4k",
+    expected: [
+      ["field", "file_name_0", "super alpha file", "text/plain"],
+      ["field", "file_name_1", "super beta file", "text/plain"],
+      [
+        "file",
+        "upload_file_0",
+        1024 * 1024,
+        "1k_a.dat",
+        "application/octet-stream",
+      ],
+    ],
+    name: "Fields and large file",
+  },
+  {
+    source: [
       "-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k\r\n",
       'Content-Disposition: form-data; name="file_name_0"\r\n',
       "\r\n",
@@ -641,6 +674,60 @@ describe("node api", () => {
       parser.write(new TextEncoder().encode(chunk))
     })
     parser.end()
+  })
+})
+
+describe("node flowing api", () => {
+  test.each(cases)("$name", opts => {
+    const parts: Expected = []
+    const errors: Array<Multipart.MultipartError["_tag"]> = []
+
+    const parser = Node.make({
+      ...(opts.config || {}),
+      headers: {
+        "content-type": "multipart/form-data; boundary=" + opts.boundary,
+      },
+    })
+    parser.on("data", part => {
+      if (part._tag === "Field") {
+        parts.push([
+          "field",
+          part.info.name,
+          Multipart.decodeField(part.info, part.value),
+          part.info.contentType,
+        ])
+        return
+      }
+
+      let size = 0
+      part.on("data", chunk => {
+        size += chunk.length
+      })
+      part.on("end", () => {
+        parts.push([
+          "file",
+          part.info.name,
+          size,
+          part.info.filename!,
+          part.info.contentType,
+        ])
+      })
+    })
+    parser.on("error", error => {
+      errors.push(error._tag)
+    })
+
+    opts.source.forEach(chunk => {
+      parser.write(new TextEncoder().encode(chunk))
+    })
+    parser.end()
+
+    setTimeout(() => {
+      assert.deepStrictEqual(opts.expected, parts)
+      if (opts.errors) {
+        assert.deepEqual(opts.errors, errors)
+      }
+    }, 100)
   })
 })
 
