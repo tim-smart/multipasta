@@ -59,22 +59,29 @@ const cases: ReadonlyArray<MultipartCase> = [
   },
   {
     source: [
-      [
-        "-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k",
-        'Content-Disposition: form-data; name="file_name_0"',
-        "",
-        "super alpha file",
-        "-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k",
-        'Content-Disposition: form-data; name="file_name_1"',
-        "",
-        "super beta file",
-        "-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k",
-        'Content-Disposition: form-data; name="upload_file_0"; filename="1k_a.dat"',
-        "Content-Type: application/octet-stream",
-        "",
-        "A".repeat(1024 * 1024),
-        "-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k--",
-      ].join("\r\n"),
+      "-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k\r\n",
+      `Content-Disposition: form-data; name="file_name_0"\r\n`,
+      "\r\n",
+      "super alpha file\r\n",
+      "-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k\r\n",
+      'Content-Disposition: form-data; name="file_name_1"\r\n',
+      "\r\n",
+      "super beta file\r\n",
+      "-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k\r\n",
+      `Content-Disposition: form-data; name="upload_file_0"; filename="1k_a.dat"\r\n`,
+      "Content-Type: application/octet-stream\r\n",
+      "\r\n",
+      "A".repeat(1024 * 1024),
+      "A".repeat(1024 * 1024),
+      "A".repeat(1024 * 1024),
+      "A".repeat(1024 * 1024),
+      "A".repeat(1024 * 1024),
+      "A".repeat(1024 * 1024),
+      "A".repeat(1024 * 1024),
+      "A".repeat(1024 * 1024),
+      "A".repeat(1024 * 1024),
+      "A".repeat(1024 * 1024),
+      "\r\n-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k--",
     ],
     boundary: "---------------------------paZqsnEHRufoShdX6fh0lUhXBP4k",
     expected: [
@@ -83,7 +90,7 @@ const cases: ReadonlyArray<MultipartCase> = [
       [
         "file",
         "upload_file_0",
-        1024 * 1024,
+        1024 * 1024 * 10,
         "1k_a.dat",
         "application/octet-stream",
       ],
@@ -674,6 +681,59 @@ describe("node api", () => {
       parser.write(new TextEncoder().encode(chunk))
     })
     parser.end()
+  })
+})
+
+describe("node async-iterable api", () => {
+  test.each(cases)("$name", async opts => {
+    const parts: Expected = []
+
+    const parser = Node.make({
+      ...(opts.config || {}),
+      headers: {
+        "content-type": "multipart/form-data; boundary=" + opts.boundary,
+      },
+    })
+    async function read() {
+      for await (const part of parser) {
+        if (part._tag === "Field") {
+          parts.push([
+            "field",
+            part.info.name,
+            Multipart.decodeField(part.info, part.value),
+            part.info.contentType,
+          ])
+        } else {
+          let size = 0
+          for await (const chunk of part) {
+            size += chunk.length
+          }
+          parts.push([
+            "file",
+            part.info.name,
+            size,
+            part.info.filename!,
+            part.info.contentType,
+          ])
+        }
+      }
+    }
+
+    const readPromise = read()
+
+    opts.source.forEach(chunk => {
+      parser.write(new TextEncoder().encode(chunk))
+    })
+    parser.end()
+
+    try {
+      await readPromise
+      assert.deepStrictEqual(opts.expected, parts)
+    } catch (err) {
+      if (opts.errors) {
+        assert.strictEqual((err as any)._tag, opts.errors[0])
+      }
+    }
   })
 })
 

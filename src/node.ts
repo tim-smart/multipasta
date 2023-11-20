@@ -15,6 +15,8 @@ export interface Field {
 }
 
 export interface MultipastaStream extends Duplex {
+  [Symbol.asyncIterator](): AsyncIterableIterator<Part>
+
   on(event: "field", listener: (field: Field) => void): this
   on(event: "file", listener: (file: FileStream) => void): this
   on(event: "close", listener: () => void): this
@@ -39,7 +41,7 @@ export type NodeConfig = Omit<MP.BaseConfig, "headers"> & {
 
 export class MultipastaStream extends Duplex {
   private _parser: MP.Parser
-  private _canWrite = true
+  _canWrite = true
   private _writeCallback: (() => void) | undefined
 
   constructor(config: NodeConfig) {
@@ -52,8 +54,7 @@ export class MultipastaStream extends Duplex {
         this.emit("field", field)
       },
       onFile: info => {
-        const file = new FileStream(info)
-        file.on("resume", this._resume.bind(this))
+        const file = new FileStream(info, this)
         this.push(file)
         this.emit("file", file)
         return chunk => {
@@ -75,8 +76,9 @@ export class MultipastaStream extends Duplex {
   _resume() {
     this._canWrite = true
     if (this._writeCallback !== undefined) {
-      this._writeCallback()
+      const callback = this._writeCallback
       this._writeCallback = undefined
+      callback()
     }
   }
 
@@ -103,66 +105,22 @@ export class MultipastaStream extends Duplex {
   }
 }
 
-export class EagerMultipastaStream extends Duplex {
-  private _parser: MP.Parser
-
-  constructor(config: NodeConfig) {
-    super({ readableObjectMode: true })
-    this._parser = MP.make({
-      ...(config as any),
-      onField: (info, value) => {
-        const field: Field = { _tag: "Field", info, value }
-        this.push(field)
-        this.emit("field", field)
-      },
-      onFile: info => {
-        const file = new FileStream(info)
-        this.push(file)
-        this.emit("file", file)
-        return chunk => {
-          file.push(chunk)
-        }
-      },
-      onError: error => {
-        this.emit("error", error)
-      },
-      onDone: () => {
-        this.push(null)
-      },
-    })
-  }
-
-  _read(_size: number) {}
-
-  _write(
-    chunk: any,
-    encoding: BufferEncoding,
-    callback: (error?: Error | null | undefined) => void,
-  ): void {
-    this._parser.write(
-      chunk instanceof Uint8Array ? chunk : Buffer.from(chunk, encoding),
-    )
-    callback()
-  }
-
-  _final(callback: (error?: Error | null | undefined) => void): void {
-    this._parser.end()
-    callback()
-  }
-}
-
 export const make = (config: NodeConfig): MultipastaStream =>
   new MultipastaStream(config)
-
-export const makeEager = (config: NodeConfig): EagerMultipastaStream =>
-  new EagerMultipastaStream(config)
 
 export class FileStream extends Readable {
   readonly _tag = "File"
   readonly filename: string
-  constructor(readonly info: MP.PartInfo) {
+  constructor(
+    readonly info: MP.PartInfo,
+    private _parent: MultipastaStream,
+  ) {
     super()
     this.filename = info.filename!
   }
-  _read(_size: number) {}
+  _read(_size: number) {
+    if (this._parent._canWrite === false) {
+      this._parent._resume()
+    }
+  }
 }
