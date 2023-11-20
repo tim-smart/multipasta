@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.1.19
+
+### Patch Changes
+
+- [`f00aa13`](https://github.com/tim-smart/multipasta/commit/f00aa1376f761b643a14d6cb083fbe4a222de04a) Thanks [@tim-smart](https://github.com/tim-smart)! - fix backpressure for node streams
+
 ## 0.1.18
 
 ### Patch Changes
