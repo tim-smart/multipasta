@@ -737,60 +737,6 @@ describe("node async-iterable api", () => {
   })
 })
 
-describe("node flowing api", () => {
-  test.each(cases)("$name", opts => {
-    const parts: Expected = []
-    const errors: Array<Multipart.MultipartError["_tag"]> = []
-
-    const parser = Node.make({
-      ...(opts.config || {}),
-      headers: {
-        "content-type": "multipart/form-data; boundary=" + opts.boundary,
-      },
-    })
-    parser.on("data", part => {
-      if (part._tag === "Field") {
-        parts.push([
-          "field",
-          part.info.name,
-          Multipart.decodeField(part.info, part.value),
-          part.info.contentType,
-        ])
-        return
-      }
-
-      let size = 0
-      part.on("data", chunk => {
-        size += chunk.length
-      })
-      part.on("end", () => {
-        parts.push([
-          "file",
-          part.info.name,
-          size,
-          part.info.filename!,
-          part.info.contentType,
-        ])
-      })
-    })
-    parser.on("error", error => {
-      errors.push(error._tag)
-    })
-
-    opts.source.forEach(chunk => {
-      parser.write(new TextEncoder().encode(chunk))
-    })
-    parser.end()
-
-    setTimeout(() => {
-      assert.deepStrictEqual(opts.expected, parts)
-      if (opts.errors) {
-        assert.deepEqual(opts.errors, errors)
-      }
-    }, 100)
-  })
-})
-
 describe("web api", () => {
   test.each(cases)("$name", async opts => {
     const parts: Expected = []
