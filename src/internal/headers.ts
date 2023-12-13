@@ -38,7 +38,7 @@ export function make() {
     state: State.key,
     headers: Object.create(null) as Record<string, string>,
     key: "",
-    value: "",
+    value: undefined as undefined | Uint8Array,
     crlf: 0,
     previousChunk: undefined as undefined | Uint8Array,
     pairs: 0,
@@ -49,12 +49,19 @@ export function make() {
     state.state = State.key
     state.headers = Object.create(null)
     state.key = ""
-    state.value = ""
+    state.value = undefined
     state.crlf = 0
     state.previousChunk = undefined
     state.pairs = 0
     state.size = 0
     return value
+  }
+
+  function concatUint8Array(a: Uint8Array, b: Uint8Array): Uint8Array {
+    const newUint8Array = new Uint8Array(a.length + b.length)
+    newUint8Array.set(a)
+    newUint8Array.set(b, a.length)
+    return newUint8Array
   }
 
   function error(reason: FailureReason) {
@@ -85,8 +92,8 @@ export function make() {
           }
 
           if (chunk[i] === 58) {
-            state.key += decoder.decode(chunk.slice(start, i)).toLowerCase()
-            if (state.key === "") {
+            state.key += decoder.decode(chunk.subarray(start, i)).toLowerCase()
+            if (state.key.length === 0) {
               return error("InvalidHeaderName")
             }
 
@@ -112,7 +119,7 @@ export function make() {
           }
         }
         if (i === end) {
-          state.key += decoder.decode(chunk.slice(start, end)).toLowerCase()
+          state.key += decoder.decode(chunk.subarray(start, end)).toLowerCase()
           return constContinue
         }
       }
@@ -175,8 +182,15 @@ export function make() {
               state.previousChunk = chunk.subarray(start)
               return constContinue
             } else if (state.crlf >= 2) {
-              state.value += decoder.decode(chunk.slice(start, i - state.crlf))
-              state.headers[state.key] = state.value
+              state.value =
+                state.value === undefined
+                  ? chunk.subarray(start, i - state.crlf)
+                  : concatUint8Array(
+                      state.value,
+                      chunk.subarray(start, i - state.crlf),
+                    )
+              const value = decoder.decode(state.value)
+              state.headers[state.key] = value
 
               start = i
               state.size--
@@ -195,7 +209,7 @@ export function make() {
 
               state.pairs++
               state.key = ""
-              state.value = ""
+              state.value = undefined
               state.crlf = 0
               state.state = State.key
 
@@ -207,7 +221,10 @@ export function make() {
         }
 
         if (i === end) {
-          state.value += decoder.decode(chunk.slice(start, end))
+          state.value =
+            state.value === undefined
+              ? chunk.subarray(start, end)
+              : concatUint8Array(state.value, chunk.subarray(start, end))
           return constContinue
         }
       }
