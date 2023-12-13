@@ -6,8 +6,8 @@ export interface PartInfo {
   readonly filename?: string
   readonly contentType: string
   readonly contentTypeParameters: Record<string, string>
-  readonly contentDiposition: string
-  readonly contentDipositionParameters: Record<string, string>
+  readonly contentDisposition: string
+  readonly contentDispositionParameters: Record<string, string>
   readonly headers: Record<string, string>
 }
 
