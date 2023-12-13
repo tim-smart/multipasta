@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.1.21
+
+### Patch Changes
+
+- [#28](https://github.com/tim-smart/multipasta/pull/28) [`6877f7d`](https://github.com/tim-smart/multipasta/commit/6877f7d5511807a26e393cbdc07aa7edf931b1fd) Thanks [@tim-smart](https://github.com/tim-smart)! - contentDisposition typo fix
+
 ## 0.1.20
 
 ### Patch Changes
