@@ -175,8 +175,8 @@ export function make({
                 : "text/plain"
               : contentType.value,
           contentTypeParameters: contentType.parameters,
-          contentDiposition: contentDisposition.value,
-          contentDipositionParameters: contentDisposition.parameters as any,
+          contentDisposition: contentDisposition.value,
+          contentDispositionParameters: contentDisposition.parameters as any,
           headers: result.headers,
         }
 
