@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.1.20
+
+### Patch Changes
+
+- [#26](https://github.com/tim-smart/multipasta/pull/26) [`ef63f31`](https://github.com/tim-smart/multipasta/commit/ef63f31c9f32094aab54b301ab0c4592a91b7233) Thanks [@tim-smart](https://github.com/tim-smart)! - fix for multibyte chars in header values
+
 ## 0.1.19
 
 ### Patch Changes
