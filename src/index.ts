@@ -8,7 +8,7 @@ export interface PartInfo {
   readonly contentTypeParameters: Record<string, string>
   readonly contentDisposition: string
   readonly contentDispositionParameters: Record<string, string>
-  readonly headers: Record<string, string>
+  readonly headers: Record<string, string | Array<string>>
 }
 
 export type MultipartError =

@@ -36,7 +36,7 @@ export function make() {
   const decoder = new TextDecoder()
   const state = {
     state: State.key,
-    headers: Object.create(null) as Record<string, string>,
+    headers: Object.create(null) as Record<string, string | Array<string>>,
     key: "",
     value: undefined as undefined | Uint8Array,
     crlf: 0,
@@ -190,7 +190,16 @@ export function make() {
                       chunk.subarray(start, i - state.crlf),
                     )
               const value = decoder.decode(state.value)
-              state.headers[state.key] = value
+              if (state.headers[state.key] === undefined) {
+                state.headers[state.key] = value
+              } else if (typeof state.headers[state.key] === "string") {
+                state.headers[state.key] = [
+                  state.headers[state.key] as string,
+                  value,
+                ]
+              } else {
+                ;(state.headers[state.key] as Array<string>).push(value)
+              }
 
               start = i
               state.size--

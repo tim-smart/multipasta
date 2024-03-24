@@ -143,9 +143,9 @@ export function make({
           return onError({ _tag: "BadHeaders", error: result })
         }
 
-        const contentType = CT.parse(result.headers["content-type"])
+        const contentType = CT.parse(result.headers["content-type"] as string)
         const contentDisposition = CT.parse(
-          result.headers["content-disposition"],
+          result.headers["content-disposition"] as string,
           true,
         )
 

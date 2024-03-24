@@ -13,12 +13,12 @@ export interface Continue {
 export interface Failure {
   readonly _tag: "Failure"
   readonly reason: FailureReason
-  readonly headers: Record<string, string>
+  readonly headers: Record<string, string | Array<string>>
 }
 
 export interface Headers {
   readonly _tag: "Headers"
-  readonly headers: Record<string, string>
+  readonly headers: Record<string, string | Array<string>>
   readonly endPosition: number
 }
 
