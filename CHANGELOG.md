@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.2.0
+
+### Minor Changes
+
+- [`12fea72`](https://github.com/tim-smart/multipasta/commit/12fea7207e77809f6006e32853f691cf879c16f7) Thanks [@tim-smart](https://github.com/tim-smart)! - handle duplicate header values
+
 ## 0.1.21
 
 ### Patch Changes
