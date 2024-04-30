@@ -3,7 +3,7 @@ import type * as HeadersParser from "./HeadersParser.js"
 
 export interface PartInfo {
   readonly name: string
-  readonly filename?: string
+  readonly filename?: string | undefined
   readonly contentType: string
   readonly contentTypeParameters: Record<string, string>
   readonly contentDisposition: string
@@ -36,11 +36,11 @@ export type MultipartError =
 
 export type BaseConfig = {
   readonly headers: Record<string, string>
-  readonly isFile?: (info: PartInfo) => boolean
-  readonly maxParts?: number
-  readonly maxTotalSize?: number
-  readonly maxPartSize?: number
-  readonly maxFieldSize?: number
+  readonly isFile?: ((info: PartInfo) => boolean) | undefined
+  readonly maxParts?: number | undefined
+  readonly maxTotalSize?: number | undefined
+  readonly maxPartSize?: number | undefined
+  readonly maxFieldSize?: number | undefined
 }
 
 export type Config = BaseConfig & {

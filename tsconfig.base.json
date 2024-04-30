@@ -2,6 +2,7 @@
   "include": [],
   "compilerOptions": {
     "strict": true,
+    "exactOptionalPropertyTypes": true,
     "moduleDetection": "force",
     "composite": true,
     "downlevelIteration": true,
