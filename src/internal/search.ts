@@ -30,18 +30,22 @@ function makeState(needle_: string): SearchState {
   const needleFirstVariationIndex = needle.findIndex(b => b !== needle[0]) ?? 1
   const needleFirstVariation = needle[needleFirstVariationIndex]
 
-  const exactMatch =
-    "Buffer" in globalThis
-      ? noopMatch
-      : (new Function(
-          "chunk",
-          "start",
-          "return " +
-            [...needle]
-              .filter((_, i) => i !== 0 || i !== needleFirstVariationIndex)
-              .map((b, i) => `chunk[start + ${i}] === ${b}`)
-              .join(" && "),
-        ) as (chunk: Uint8Array, start: number) => boolean)
+  const needleIndexes: Array<number> = []
+  const needleChars: Array<number> = []
+  for (let i = 0; i < needleLength; i++) {
+    if (i === 0 || i === needleFirstVariationIndex) continue
+    needleIndexes.push(i)
+    needleChars.push(needle[i])
+  }
+  const needleIndexesLen = needleIndexes.length
+  function exactMatch(chunk: Uint8Array, start: number): boolean {
+    for (let i = 0; i < needleIndexesLen; i++) {
+      if (chunk[start + needleIndexes[i]] !== needleChars[i]) {
+        return false
+      }
+    }
+    return true
+  }
 
   return {
     needle,
