@@ -12,6 +12,25 @@ interface SearchState {
   matchIndex: number
 }
 
+function makeMatcher(needle: Uint8Array, needleFirstVariationIndex: number) {
+  const needleIndexes: Array<number> = []
+  const needleChars: Array<number> = []
+  for (let i = 0; i < needle.length; i++) {
+    if (i === 0 || i === needleFirstVariationIndex) continue
+    needleIndexes.push(i)
+    needleChars.push(needle[i])
+  }
+  const needleIndexesLen = needleIndexes.length
+  return function exactMatch(chunk: Uint8Array, start: number): boolean {
+    for (let i = 0; i < needleIndexesLen; i++) {
+      if (chunk[start + needleIndexes[i]] !== needleChars[i]) {
+        return false
+      }
+    }
+    return true
+  }
+}
+
 function noopMatch(_: Uint8Array, __: number): boolean {
   return false
 }
@@ -30,22 +49,10 @@ function makeState(needle_: string): SearchState {
   const needleFirstVariationIndex = needle.findIndex(b => b !== needle[0]) ?? 1
   const needleFirstVariation = needle[needleFirstVariationIndex]
 
-  const needleIndexes: Array<number> = []
-  const needleChars: Array<number> = []
-  for (let i = 0; i < needleLength; i++) {
-    if (i === 0 || i === needleFirstVariationIndex) continue
-    needleIndexes.push(i)
-    needleChars.push(needle[i])
-  }
-  const needleIndexesLen = needleIndexes.length
-  function exactMatch(chunk: Uint8Array, start: number): boolean {
-    for (let i = 0; i < needleIndexesLen; i++) {
-      if (chunk[start + needleIndexes[i]] !== needleChars[i]) {
-        return false
-      }
-    }
-    return true
-  }
+  const exactMatch =
+    typeof Buffer === "function"
+      ? noopMatch
+      : makeMatcher(needle, needleFirstVariationIndex)
 
   return {
     needle,
