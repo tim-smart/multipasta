@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.2.1
+
+### Patch Changes
+
+- [`ed57d0a`](https://github.com/tim-smart/multipasta/commit/ed57d0aca6ee09939e976917d17b82e5a5f4eb91) Thanks [@tim-smart](https://github.com/tim-smart)! - fix for optional property types
+
 ## 0.2.0
 
 ### Minor Changes
