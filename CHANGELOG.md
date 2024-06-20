@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.2.2
+
+### Patch Changes
+
+- [`e869167`](https://github.com/tim-smart/multipasta/commit/e869167eabc2fd4eaee961a931d107eb5a58ae55) Thanks [@tim-smart](https://github.com/tim-smart)! - remove use of "new Function"
+
 ## 0.2.1
 
 ### Patch Changes
