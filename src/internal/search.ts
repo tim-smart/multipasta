@@ -171,8 +171,7 @@ export function make(
     }
   }
 
-  function writeBuffer(chunk_: Buffer | Uint8Array): void {
-    let chunk = Buffer.isBuffer(chunk_) ? chunk_ : Buffer.from(chunk_)
+  function writeBuffer(chunk: Buffer | Uint8Array): void {
     let chunkLength = chunk.length
 
     if (state.previousChunk !== undefined) {
@@ -194,7 +193,7 @@ export function make(
 
     let pos = 0
     while (pos < chunkLength) {
-      const match = chunk.indexOf(state.needle, pos)
+      const match = Buffer.prototype.indexOf.call(chunk, state.needle, pos)
 
       if (match > -1) {
         if (match > pos) {
