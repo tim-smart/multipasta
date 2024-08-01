@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.2.3
+
+### Patch Changes
+
+- [`e0ef1a6`](https://github.com/tim-smart/multipasta/commit/e0ef1a6bc40408a44b8debcc2a538455c15ec53e) Thanks [@tim-smart](https://github.com/tim-smart)! - don't convert Uint8Array to Buffer on node
+
 ## 0.2.2
 
 ### Patch Changes
