@@ -57,14 +57,14 @@ export function make(
       }
     }
 
-    const skipTable = new Uint8Array(256).fill(state.needle.length + 1)
+    const skipTable = new Uint8Array(256).fill(state.needle.length)
     for (let i = 0, lastIndex = state.needle.length - 1; i < lastIndex; ++i) {
       skipTable[state.needle[i]] = lastIndex - i
     }
 
     return function (chunk, needle, fromIndex) {
       const lengthTotal = chunk.length
-      let i = fromIndex
+      let i = fromIndex + state.needleLength - 1
 
       while (i < lengthTotal) {
         for (

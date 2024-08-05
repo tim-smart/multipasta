@@ -2,6 +2,8 @@ import { assert, describe, test } from "vitest"
 import * as Multipart from "../src/index.js"
 import * as Node from "../src/node.js"
 import * as Web from "../src/web.js"
+import * as Crypto from "node:crypto"
+import * as FS from "node:fs"
 
 type Expected = Array<
   | [type: "field", name: string, value: string, contentType: string]
@@ -791,6 +793,59 @@ describe("web api", () => {
       if (opts.errors) {
         assert(opts.errors.length > 0)
       }
+    }
+  })
+})
+
+describe.only("random data", () => {
+  test("smoke test", () => {
+    const boundary = "------WebKitFormBoundaryTB2MiQ36fnSJlrhY--"
+    for (let i = 0; i < 100; i++) {
+      const size = Math.round(Math.random() * 1024 * 1024 * 100)
+      const data = Crypto.randomBytes(size)
+      let success = false
+
+      const parser = Multipart.make({
+        headers: {
+          "content-type": `multipart/form-data; boundary=${boundary}`,
+        },
+        onDone() {
+          success = true
+        },
+        onFile() {
+          return () => {}
+        },
+        onField() {},
+        onError() {},
+      })
+
+      const buffer = Buffer.concat([
+        Buffer.from(`--${boundary}\r\n`),
+        Buffer.from(
+          'Content-Disposition: form-data; name="file"; filename="blob"\r\n',
+        ),
+        Buffer.from("Content-Type: application/octet-stream\r\n"),
+        Buffer.from("\r\n"),
+        data,
+        Buffer.from(`\r\n--${boundary}--`),
+      ])
+
+      let cursor = 0
+      while (cursor < buffer.length) {
+        const maxChunkSize = buffer.length - cursor
+        const chunkSize = Math.min(
+          Math.round(Math.random() * 128 * 1024 * 1024),
+          maxChunkSize,
+        )
+        parser.write(buffer.subarray(cursor, cursor + chunkSize))
+        cursor += chunkSize
+      }
+      parser.end()
+      if (!success) {
+        FS.writeFileSync("fail-data", buffer)
+      }
+
+      assert.isTrue(success)
     }
   })
 })
