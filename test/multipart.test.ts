@@ -797,7 +797,7 @@ describe("web api", () => {
   })
 })
 
-describe.only("random data", () => {
+describe("random data", () => {
   test("smoke test", () => {
     const boundary = "------WebKitFormBoundaryTB2MiQ36fnSJlrhY--"
     for (let i = 0; i < 100; i++) {
