@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.2.5
+
+### Patch Changes
+
+- [`2222e43`](https://github.com/tim-smart/multipasta/commit/2222e43caf9d025867e8b01257bb9c16e8d4ddcc) Thanks [@tim-smart](https://github.com/tim-smart)! - fix issue where where boundary is not found
+
 ## 0.2.4
 
 ### Patch Changes
