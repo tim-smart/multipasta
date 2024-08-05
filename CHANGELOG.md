@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.2.4
+
+### Patch Changes
+
+- [`0695563`](https://github.com/tim-smart/multipasta/commit/06955633e326494be598ddcee177f1ba4a687c98) Thanks [@tim-smart](https://github.com/tim-smart)! - simplify non-node search algo
+
 ## 0.2.3
 
 ### Patch Changes
