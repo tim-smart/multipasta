@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.2.6
+
+### Patch Changes
+
+- [`c4f154d`](https://github.com/tim-smart/multipasta/commit/c4f154de9edb7f4d700465d7e2d23b35047b0b74) Thanks [@tim-smart](https://github.com/tim-smart)! - propagate errors in node parser to file streams
+
 ## 0.2.5
 
 ### Patch Changes
