@@ -15,7 +15,7 @@ export interface Field {
 }
 
 export interface MultipastaStream extends Duplex {
-  [Symbol.asyncIterator](): AsyncIterableIterator<Part>
+  [Symbol.asyncIterator](): NodeJS.AsyncIterator<Part>
 
   on(event: "field", listener: (field: Field) => void): this
   on(event: "file", listener: (file: FileStream) => void): this
