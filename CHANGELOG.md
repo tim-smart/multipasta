@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.2.7
+
+### Patch Changes
+
+- [`42460b3`](https://github.com/tim-smart/multipasta/commit/42460b3eec92e86a277d7dd9db41550a44ac65df) Thanks [@tim-smart](https://github.com/tim-smart)! - don't emit parts when there is an error
+
 ## 0.2.6
 
 ### Patch Changes
