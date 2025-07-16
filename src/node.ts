@@ -46,15 +46,18 @@ export class MultipastaStream extends Duplex {
 
   constructor(config: NodeConfig) {
     super({ readableObjectMode: true })
+    let currentError: MP.MultipartError | undefined
     let currentFile: FileStream | undefined
     this._parser = MP.make({
       ...(config as any),
       onField: (info, value) => {
+        if (currentError !== undefined) return
         const field: Field = { _tag: "Field", info, value }
         this.push(field)
         this.emit("field", field)
       },
       onFile: info => {
+        if (currentError !== undefined) return _ => {}
         const file = new FileStream(info, this)
         currentFile = file
         this.push(file)
@@ -70,6 +73,7 @@ export class MultipastaStream extends Duplex {
       onError: error => {
         this.emit("error", error)
         currentFile?.emit("error", error)
+        currentError = error
       },
       onDone: () => {
         this.push(null)
