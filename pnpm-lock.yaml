@@ -24,8 +24,8 @@ devDependencies:
     specifier: ^2.29.5
     version: 2.29.5
   '@effect/build-utils':
-    specifier: ^0.8.8
-    version: 0.8.8
+    specifier: ^0.3.1
+    version: 0.3.2
   '@effect/language-service':
     specifier: ^0.27.0
     version: 0.27.0
@@ -469,13 +469,10 @@ packages:
       prettier: 2.8.8
     dev: true
 
-  /@effect/build-utils@0.8.8:
-    resolution: {integrity: sha512-OWyGEMsInZaA1seUIqa16qJX9zgo0f85Vll304hnxo4KhjWZTByzUartJ/GG7BZJ+m8eRj0xOkr9Kv9PBnV+ng==}
+  /@effect/build-utils@0.3.2:
+    resolution: {integrity: sha512-mphoOCLdqKCTkSUr/aXJ+AG/vZqlk2Gjtl1qkl91K8avoufX6/AhwhLz8UEoU3/moAB1iA5IfDLBJO36flWDxA==}
     engines: {node: '>=16.17.1'}
     hasBin: true
-    dependencies:
-      micromatch: 4.0.8
-      pkg-entry-points: 1.1.1
     dev: true
 
   /@effect/language-service@0.27.0:
@@ -1980,10 +1977,6 @@ packages:
   /pify@4.0.1:
     resolution: {integrity: sha512-uB80kBFb/tfd68bVleG9T5GGsGPjJrLAUpR5PZIrhBnIaRTQRjqdJSsIKkOP6OAIFbj7GOrcudc5pNjZ+geV2g==}
     engines: {node: '>=6'}
-    dev: true
-
-  /pkg-entry-points@1.1.1:
-    resolution: {integrity: sha512-BhZa7iaPmB4b3vKIACoppyUoYn8/sFs17VJJtzrzPZvEnN2nqrgg911tdL65lA2m1ml6UI3iPeYbZQ4VXpn1mA==}
     dev: true
 
   /playwright-core@1.54.1:
