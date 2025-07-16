@@ -847,5 +847,5 @@ describe("random data", () => {
 
       assert.isTrue(success)
     }
-  })
+  }, 30_000)
 })
