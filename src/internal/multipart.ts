@@ -213,7 +213,7 @@ export function make({
   return {
     write(chunk: Uint8Array) {
       if ((state.totalSize += chunk.length) > maxTotalSize) {
-        return onError(errMaxTotalSize)
+        onError(errMaxTotalSize)
       }
       return split.write(chunk)
     },
