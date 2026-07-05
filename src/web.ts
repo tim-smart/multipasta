@@ -31,6 +31,7 @@ export const make = (config: WebConfig): MultipastaStream => {
   let error: MP.MultipartError | undefined
   let partBuffer: Array<Part> = []
   let readResolve: (() => void) | undefined
+  let chunkResolve: (() => void) | undefined
   let finished = false
 
   const parser = MP.make({
@@ -42,7 +43,6 @@ export const make = (config: WebConfig): MultipastaStream => {
     },
     onFile(info) {
       let chunkBuffer: Array<Uint8Array> = []
-      let chunkResolve: (() => void) | undefined
       let finished = false
 
       const readable = new ReadableStream<Uint8Array>({
@@ -53,6 +53,8 @@ export const make = (config: WebConfig): MultipastaStream => {
             for (const chunk of chunks) {
               controller.enqueue(chunk)
             }
+          } else if (error) {
+            controller.error(error)
           } else if (finished) {
             controller.close()
           } else {
@@ -83,6 +85,7 @@ export const make = (config: WebConfig): MultipastaStream => {
     onError(error_) {
       if (error !== undefined) return
       error = error_
+      if (chunkResolve !== undefined) chunkResolve()
       if (readResolve !== undefined) readResolve()
     },
 
@@ -93,7 +96,7 @@ export const make = (config: WebConfig): MultipastaStream => {
   })
 
   const writable = new WritableStream<Uint8Array>({
-    write(chunk, controller) {
+    write(chunk, _controller) {
       parser.write(chunk)
     },
     close() {
