@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.2.8
+
+### Patch Changes
+
+- [#40](https://github.com/tim-smart/multipasta/pull/40) [`05a1cf6`](https://github.com/tim-smart/multipasta/commit/05a1cf6b7459cbfbad33fb15befe1c51b3b682c9) Thanks [@tim-smart](https://github.com/tim-smart)! - ensure errors are propagated in web streams
+
 ## 0.2.7
 
 ### Patch Changes
