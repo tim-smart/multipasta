@@ -795,6 +795,64 @@ describe("web api", () => {
       }
     }
   })
+
+  test("propagates parser errors to an active file stream", async () => {
+    const boundary = "boundary"
+    const encoder = new TextEncoder()
+    const initialChunk = [
+      "--" + boundary,
+      'Content-Disposition: form-data; name="file"; filename="file.txt"',
+      "Content-Type: text/plain",
+      "",
+      "hello",
+    ].join("\r\n")
+    const parser = Web.make({
+      headers: new Headers({
+        "content-type": "multipart/form-data; boundary=" + boundary,
+      }),
+      maxTotalSize: encoder.encode(initialChunk).length,
+    })
+    const writer = parser.writable.getWriter()
+    const reader = parser.readable.getReader()
+
+    await writer.write(encoder.encode(initialChunk))
+
+    const partResult = await reader.read()
+    if (partResult.done) {
+      assert.fail("expected file part")
+    }
+    const part = partResult.value
+    if (part._tag !== "File") {
+      assert.fail("expected file part")
+    }
+
+    const fileReader = part.readable.getReader()
+    const chunkResult = await fileReader.read()
+    if (chunkResult.done) {
+      assert.fail("expected file chunk")
+    }
+    assert.strictEqual(new TextDecoder().decode(chunkResult.value), "hello")
+
+    const readResult = Promise.race([
+      fileReader.read().then(
+        () => "resolved" as const,
+        (error: unknown) => error as Multipart.MultipartError,
+      ),
+      new Promise<"timeout">(resolve => {
+        setTimeout(() => resolve("timeout"), 100)
+      }),
+    ])
+
+    await writer.write(encoder.encode("!"))
+
+    const error = await readResult
+    assert.notStrictEqual(error, "timeout")
+    assert.notStrictEqual(error, "resolved")
+    assert.deepStrictEqual(error, {
+      _tag: "ReachedLimit",
+      limit: "MaxTotalSize",
+    })
+  })
 })
 
 describe("random data", () => {
