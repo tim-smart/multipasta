@@ -1,5 +1,11 @@
 # multipasta
 
+## 0.2.9
+
+### Patch Changes
+
+- [#42](https://github.com/tim-smart/multipasta/pull/42) [`e25b2b4`](https://github.com/tim-smart/multipasta/commit/e25b2b47687852f0949a300a4c4242ecfe7a6293) Thanks [@juliuslipp](https://github.com/juliuslipp)! - accept characters above U+00FF in content-disposition parameter values
+
 ## 0.2.8
 
 ### Patch Changes
