@@ -580,6 +580,46 @@ const cases: ReadonlyArray<MultipartCase> = [
     ],
     name: "multiple empty parts should get ignored",
   },
+  {
+    source: [
+      [
+        "------WebKitFormBoundaryUnicodeName",
+        'Content-Disposition: form-data; name="purpose"',
+        "",
+        "attachment",
+        "------WebKitFormBoundaryUnicodeName",
+        'Content-Disposition: form-data; name="screenshot"; filename="Screenshot 2026-07-02 at 11.06.31 PM.png"',
+        "Content-Type: image/png",
+        "",
+        "AAAA",
+        "------WebKitFormBoundaryUnicodeName",
+        'Content-Disposition: form-data; name="emoji"; filename="emoji \u{1f600}.png"',
+        "Content-Type: image/png",
+        "",
+        "BBBB",
+        "------WebKitFormBoundaryUnicodeName",
+        'Content-Disposition: form-data; name="cjk"; filename="漢字.png"',
+        "Content-Type: image/png",
+        "",
+        "CCCC",
+        "------WebKitFormBoundaryUnicodeName--",
+      ].join("\r\n"),
+    ],
+    boundary: "----WebKitFormBoundaryUnicodeName",
+    expected: [
+      ["field", "purpose", "attachment", "text/plain"],
+      [
+        "file",
+        "screenshot",
+        4,
+        "Screenshot 2026-07-02 at 11.06.31 PM.png",
+        "image/png",
+      ],
+      ["file", "emoji", 4, "emoji \u{1f600}.png", "image/png"],
+      ["file", "cjk", 4, "漢字.png", "image/png"],
+    ],
+    name: "filenames beyond Latin-1 stay file parts",
+  },
 ]
 
 describe("multipart", () => {
