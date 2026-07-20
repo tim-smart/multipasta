@@ -14,17 +14,26 @@
  * qdtext        = HTAB / SP / %x21 / %x23-5B / %x5D-7E / obs-text
  * obs-text      = %x80-FF
  * quoted-pair   = "\" ( HTAB / SP / VCHAR / obs-text )
+ *
+ * obs-text is byte-oriented (%x80-FF), but this parser receives header
+ * values already UTF-8 decoded (internal/headers.ts), so characters above
+ * U+00FF arrive as single code points. Browsers serialize multipart
+ * name/filename parameters as raw UTF-8 per the WHATWG HTML spec, so the
+ * quoted-string ranges extend to U+10FFFF; the structural quote and
+ * backslash exclusions are unchanged.
  */
 const paramRE =
-  /; *([!#$%&'*+.^\w`|~-]+)=("(?:[\v\u0020\u0021\u0023-\u005b\u005d-\u007e\u0080-\u00ff]|\\[\v\u0020-\u00ff])*"|[!#$%&'*+.^\w`|~-]+) */gu
+  /; *([!#$%&'*+.^\w`|~-]+)=("(?:[\v\u0020\u0021\u0023-\u005b\u005d-\u007e\u0080-\u{10ffff}]|\\[\v\u0020-\u{10ffff}])*"|[!#$%&'*+.^\w`|~-]+) */gu
 
 /**
  * RegExp to match quoted-pair in RFC 7230 sec 3.2.6
  *
  * quoted-pair = "\" ( HTAB / SP / VCHAR / obs-text )
  * obs-text    = %x80-FF
+ *
+ * Extended past obs-text for the same reason as paramRE above.
  */
-const quotedPairRE = /\\([\v\u0020-\u00ff])/gu
+const quotedPairRE = /\\([\v\u0020-\u{10ffff}])/gu
 
 /**
  * RegExp to match type in RFC 7231 sec 3.1.1.1
