@@ -30,7 +30,7 @@ jobs:
       - name: Check source state
         run: git add src && git diff-index --cached HEAD --exit-code src
       - name: Upgrade npm for OIDC support
-        run: npm install -g npm@latest
+        run: npm install -g npm@11
       - name: Create Release Pull Request or Publish
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         id: changesets
