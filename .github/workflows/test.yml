@@ -28,6 +28,7 @@ jobs:
   browser:
     name: Browser (${{ matrix.browser }})
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -43,6 +44,7 @@ jobs:
   bun:
     name: Bun
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
 
